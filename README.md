@@ -1,13 +1,13 @@
 # References
 
-"Elements of Evolutionary Algorithms" Lecture Slides
-http://lmarti.com/wp-content/uploads/2014/09/02-elements-of-eas.pdf
-http://lmarti.com/aec-2014
+"Elements of Evolutionary Algorithms" Lecture Slides  
+http://lmarti.com/wp-content/uploads/2014/09/02-elements-of-eas.pdf  
+http://lmarti.com/aec-2014  
 
-Distributed Evolutionary Algorithms in Python
-https://github.com/DEAP/deap
-http://deap.readthedocs.org/en/master/
-https://github.com/DEAP/notebooks
+Distributed Evolutionary Algorithms in Python  
+https://github.com/DEAP/deap  
+http://deap.readthedocs.org/en/master/  
+https://github.com/DEAP/notebooks  
 
 
 # Setup on OS X (Yosemite)
@@ -18,12 +18,13 @@ Let's assume you have *nothing*, although that does lengthen the list of prerequ
 
 ### Install git
 
+Everybody (in IT) needs git.
+
 http://www.git-scm.com/
 
-Everybody (in IT) needs git.
 Probably easiest to just use their download install [at downloads](http://www.git-scm.com/downloads)
 
-There's a free GUI for git here, which does have it's uses:
+There's a free GUI for git here, which does have it's uses:  
 http://sourcetreeapp.com/
 
 
