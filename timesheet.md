@@ -1,11 +1,12 @@
 # Timesheet
 
-12 Mar 15 - 
-# Create environment, install notebook, DEAP, document it
+## 12 Mar 2015
+
+* **Create environment, install notebook, DEAP, document it**
 
 See the README.md
 
-# Run the "onemax" problem and work out what it does, and how.
+* **Run the "onemax" problem and work out what it does, and how.**
 
 https://github.com/DEAP/deap/blob/daf8c1c8776f57be448865ac8ace56bdb05d8324/examples/ga/onemax.py
 http://deap.readthedocs.org/en/master/api/tools.html#deap.tools.initRepeat
@@ -34,11 +35,13 @@ http://deap.readthedocs.org/en/master/api/tools.html#deap.tools.initRepeat
 
 Seems like a very obtuse way to get a sequence of 100 "true"s but there it is ;-)
 
-# Run the 'onemax_short' problem
+* **Run the 'onemax_short' problem**
 
 http://deap.readthedocs.org/en/master/api/algo.html#deap.algorithms.eaSimple
 
 - turns out there is an "algorithm" routine available in DEAP to do something like the above (crossover and mutate randomly)
  just by 'registering' into the 'toolbox' module all the necessary routines and probability constants.
 
-# Take the time to write everything up and commit it and email Nigel.
+* **Look over the library** Wander [Evolutionary Tools](http://deap.readthedocs.org/en/master/api/tools.html) getting an idea of what is there.
+
+* **Document everything up and commit it and email Nigel.**
