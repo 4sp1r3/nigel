@@ -61,6 +61,10 @@ If pip has a much lower version number.  Upgrade it, and setuptools, with
 
 ```$ pip install deap```
 
+## you'll probably want numpy at some point...
+
+```$ pip install numpy```
+
 
 # Run the DEAP examples
 
