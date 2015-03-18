@@ -2,25 +2,25 @@
 
 ## 18 Mar 2015
 
-# **still working through pete's script, transposing into a workbook**
-
+* **still working through pete's script, transposing into a workbook**
+   - [Pete's workbook](http://nbviewer.ipython.org/github/johnmee/nigel/blob/master/Petes%20Workbook.ipynb)
 
 ## 17 Mar 2015
 
-# **watched the second video on genetic programming**
-# **scoured the internets for similar work/training samples**
-# **walkthrough the 'Artificial Ant Problem'**
-# **working through Pete's script**
+* **watched the second video on genetic programming**
+* **scoured the internets for similar work/training samples**
+* **walkthrough the 'Artificial Ant Problem'**
+* **working through Pete's script**
 
 
 ## 16 Mar 2015
 
-# **watch the video - pretty cool!**
-# **sift through the incoming code dump from pete**
+* **watch the video - pretty cool!**
+* **sift through the incoming code dump from pete**
 	- tried running it but the virtualenv is incomplete
 	- shouldn't be too hard to rebuild as there's enough clues nonetheless
-# **long chat with Pete going through where he got to in detail**
-# **rereading the 'Job Requirements' document again**
+* **long chat with Pete going through where he got to in detail**
+* **rereading the 'Job Requirements' document again**
     - this time with a better understanding for it's language
 * **long chat with nigel via facetime**
 
