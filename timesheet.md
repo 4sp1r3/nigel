@@ -1,6 +1,104 @@
 # Timesheet
 
-## 18 Mar 2015
+## 13 April 2015 (9-1 4hrs)
+
+* add some primitive primitives (add, subtract, loop). I confess I'm not very confident it will work but that's the
+    instruction and it has to happen at some point so time to try.  Runs currently get the "none available" issue as 
+    mentioned on April 7th.
+* added them. It's still asking for more primitives (type Photo).  I don't understand it so posted up on StackOverflow
+    in hope.
+
+
+## 7 April 2015 (3hrs)
+
+* trying to add primitives. not quite understanding why it keeps complaining "generate tried to add a primitive of
+    type '<class ...whatever>', but there are none available" when it seems to me that there are some there, it
+    just refuses to use the same one twice :-(
+* something more concerning is that the programs appear to be the same but are getting different scores?!
+    I'm guessing that's because they're not all being fed the same triangles... but they are! so that's an
+    unsettling mystery.
+* nup. still going backwards - need to reduce further—focus on
+        start with a photo of a triangle
+        terminals are: the size (x,y) of the photo
+        empherals are: integers -10, 10
+        primitives are: is_black? is_white?
+                      : add 1/-1 to ? - how to coorelate the coordinates of a vertex with a point on the photo!?
+    It's a search for the transition from black/white, then a strategy to find the edges/points!
+    Is it like the ant problem?
+
+## 4 April 2015 (1hr)
+
+* increased the number of triangles it tests for each evaluation. results are non-coalesing as expected.
+
+## 3 April 2015 (3hrs)
+
+* hey, it runs.  No idea what it's doing since I only gave it one primitive (translate), but, hey, it runs :-)
+* found bug in the distance calculation. now getting numbers!
+* worked out how to see the algorithms it's generating, and then the triangles it's producing
+* concluded it is only running the program once to evaluate it - needs to be more, much more. I'm worried
+    the results are skewed according to the random triangle it gets given.  Would be good to try and 
+    ensure all evals are done with the same random triangles.
+* still, happy we're into "IT" now.  It's doing stuff!
+
+## 2 April 2015 (4hrs)
+
+* awesome generation of random triangles, saving their vertices, drawing a photo, saving & loading the photo back in.
+
+## 1 April 2015 (2hrs)
+
+* well that's odd—I did solely work on this yesterday, quite a bit, although there were substantial distractions, I clocked
+   a few hours.  But most of that time was drained away by a preference switch back to pycharm; thus run up a new venv, 
+   then trying to get the 'photo's of the triangles to inline into notebook. Bah! Just call it 2hrs actually 'on point'.
+
+# INVOICE #2 (38hrs)
+
+## 31 Mar 2015 (9hrs)
+
+* problem I've been puzzling over for the past two hours (IndexError in gp.generate) is a bug in deap.
+   Installing 12day old deap 1.0.2.  Won't work.  Whatever, got 1.1.0 from github.
+* well `gp.genGrow` is now creating trees which is progress!
+* i thought it would be nice to get a visualization of the trees but no joy. there's something not
+   quite right about this Canopy environment. Might've hit a paywall <sigh>.
+* ok. moved on. Now I'm stuck on a Syntax Error with the 'if_then_else'.  I though I'd be able to have
+   it as a primitive with objects (Head) as the result but no joy. Seems like DEAP didn't have this in 
+   mind because it casts to a lambda which stringifys the objects into their names, which is pretty useless.
+   Have to rethink what my minimal program can do?!  Or resolve in deap.
+* wasted heaps of time fiddling around with the triangles idea, thinking how it would work, writing generation
+   code and messing with environments and imaging libraries again
+
+
+## 30 Mar 2015 (10hrs)
+
+* formulate the difference between two faces (for use as fit-test)
+* working through creating the absolute minimal GP (one terminal)
+* wow. this is tricky. the documentation could be be expansive
+   trying to work out all the routines in deap and how to feed them
+* still working out how to initialize the GP: define the individuals and generate them
+
+
+## 25 Mar 2015 (5hrs)
+
+* had a go at adding the edges to the imaging, without any luck
+* messing about trying to get the two heads side by side for comparison, no luck, best was one on top of the other.
+* assembling tidily into a commit in a new repo, pushing to bitbucket, discovering their markdown is broken (grumble, unlike githubs, grumble)
+
+## 24 Mar 2015 (12hrs)
+
+* refresher on matrix algebra and application to 2D and 3D objects (3hr)
+* nutting out the generation, storage, and display of numpy matricies representing greyscale images (3hr)
+* captured the 2d image load into a simple class and wrote a test
+* researching how to load, store, plot, display the face mesh (mayavi?)
+* discovered and installed enthought/canopy. Plot a mesh surface.
+* discovered numpy.loadtxt-obviating pete's import routine
+* managed to 3D plot the face!
+
+## 23 Mar 2015 (2hrs)
+
+* **move repo to bitbucket**
+* Worked on the notebook trying to devise the simplest problem to get started with
+
+# INVOICE #1 --- (16hrs)
+## 18 Mar 2015 
 
 * **still working through pete's script, transposing into a workbook**
    - [Pete's workbook](http://nbviewer.ipython.org/github/johnmee/nigel/blob/master/Petes%20Workbook.ipynb)
