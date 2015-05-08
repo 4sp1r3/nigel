@@ -31,7 +31,8 @@ from functools import partial, wraps
 from inspect import isclass
 from operator import eq, lt
 
-import tools        # Needed by HARM-GP
+from . import tools        # Needed by HARM-GP
+import collections
 
 ######################################
 # GP Data structure                  #
@@ -196,7 +197,7 @@ class Primitive(object):
         self.arity = len(args)
         self.args = args
         self.ret = ret
-        args = ", ".join(map("{{{0}}}".format, range(self.arity)))
+        args = ", ".join(map("{{{0}}}".format, list(range(self.arity))))
         self.seq = "{name}({args})".format(name=self.name, args=args)
 
     def format(self, *args):
@@ -295,7 +296,7 @@ class PrimitiveSetTyped(object):
         def addType(dict_, ret_type):
             if not ret_type in dict_:
                 new_list = []
-                for type_, list_ in dict_.items():
+                for type_, list_ in list(dict_.items()):
                     if issubclass(type_, ret_type):
                         for item in list_:
                             if not item in new_list:
@@ -355,7 +356,7 @@ class PrimitiveSetTyped(object):
         :param name: defines the name of the terminal in the expression.
         """
         symbolic = False
-        if name is None and callable(terminal):
+        if name is None and isinstance(terminal, collections.Callable):
             name = terminal.__name__
 
         assert name not in self.context, \
@@ -474,11 +475,11 @@ def compile(expr, pset):
         return eval(code, pset.context, {})
     except MemoryError:
         _, _, traceback = sys.exc_info()
-        raise MemoryError, ("DEAP : Error in tree evaluation :"
+        raise MemoryError("DEAP : Error in tree evaluation :"
                             " Python cannot evaluate a tree higher than 90. "
                             "To avoid this problem, you should use bloat control on your "
                             "operators. See the DEAP documentation for more information. "
-                            "DEAP will now abort."), traceback
+                            "DEAP will now abort.").with_traceback(traceback)
 
 
 def compileADF(expr, psets):
@@ -500,7 +501,7 @@ def compileADF(expr, psets):
     """
     adfdict = {}
     func = None
-    for pset, subexpr in reversed(zip(psets, expr)):
+    for pset, subexpr in reversed(list(zip(psets, expr))):
         pset.context.update(adfdict)
         func = compile(subexpr, pset)
         adfdict.update({pset.name: func})
@@ -605,9 +606,9 @@ def generate(pset, min_, max_, condition, type_=None):
                 term = random.choice(pset.terminals[type_])
             except IndexError:
                 _, _, traceback = sys.exc_info()
-                raise IndexError, "The gp.generate function tried to add "\
+                raise IndexError("The gp.generate function tried to add "\
                                   "a terminal of type '%s', but there is "\
-                                  "none available." % (type_,), traceback
+                                  "none available." % (type_,)).with_traceback(traceback)
             if isclass(term):
                 term = term()
             expr.append(term)
@@ -616,9 +617,9 @@ def generate(pset, min_, max_, condition, type_=None):
                 prim = random.choice(pset.primitives[type_])
             except IndexError:
                 _, _, traceback = sys.exc_info()
-                raise IndexError, "The gp.generate function tried to add "\
+                raise IndexError("The gp.generate function tried to add "\
                                   "a primitive of type '%s', but there is "\
-                                  "none available." % (type_,), traceback
+                                  "none available." % (type_,)).with_traceback(traceback)
             expr.append(prim)
             for arg in reversed(prim.args):
                 stack.append((depth + 1, arg))
@@ -646,8 +647,8 @@ def cxOnePoint(ind1, ind2):
     types2 = defaultdict(list)
     if ind1.root.ret == __type__:
         # Not STGP optimization
-        types1[__type__] = xrange(1, len(ind1))
-        types2[__type__] = xrange(1, len(ind2))
+        types1[__type__] = range(1, len(ind1))
+        types2[__type__] = range(1, len(ind2))
         common_types = [__type__]
     else:
         for idx, node in enumerate(ind1[1:], 1):
@@ -996,8 +997,8 @@ def harm(population, toolbox, cxpb, mutpb, ngen,
                 opRandom = random.random()
                 if opRandom < cxpb:
                     # Crossover
-                    aspirant1, aspirant2 = toolbox.mate(*map(toolbox.clone,
-                                                             toolbox.select(population, 2)))
+                    aspirant1, aspirant2 = toolbox.mate(*list(map(toolbox.clone,
+                                                             toolbox.select(population, 2))))
                     del aspirant1.fitness.values, aspirant2.fitness.values
                     if acceptfunc(len(aspirant1)):
                         producedpop.append(aspirant1)
@@ -1043,7 +1044,7 @@ def harm(population, toolbox, cxpb, mutpb, ngen,
     record = stats.compile(population) if stats else {}
     logbook.record(gen=0, nevals=len(invalid_ind), **record)
     if verbose:
-        print logbook.stream
+        print(logbook.stream)
 
     # Begin the generational process
     for gen in range(1, ngen + 1):
@@ -1104,7 +1105,7 @@ def harm(population, toolbox, cxpb, mutpb, ngen,
         record = stats.compile(population) if stats else {}
         logbook.record(gen=gen, nevals=len(invalid_ind), **record)
         if verbose:
-            print logbook.stream
+            print(logbook.stream)
 
     return population, logbook
 
@@ -1165,7 +1166,7 @@ def graph(expr):
        <http://networkx.lanl.gov/pygraphviz/>`_ as the nodes might be plotted
        out of order when using `NetworX <http://networkx.github.com/>`_.
     """
-    nodes = range(len(expr))
+    nodes = list(range(len(expr)))
     edges = list()
     labels = dict()
 
