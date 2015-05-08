@@ -99,6 +99,14 @@
 
 ## 1 April 2015 (2hrs)
 
+* ok so I was right, and wrong. Deap does just stringify the objects, but I'm expected to create
+    the primitives in a way such that doesn't present as a problem. Tried some different algorithms
+    and they didn't have the same issue, but time to put more effort into the construction of
+    the primates.
+* still confused about the PrimitiveSetTyped inputs & outputs; what they do and how to use them—if at all!
+    - oh! maybe it declares the start args/type and end-type so gen program has start/end nodes.
+* thinking to try doing triangles. Give it 3 2D points and a 2D "photo" of a triangle. It has to move the
+    points to better match the shape of the photo.
 * well that's odd—I did solely work on this yesterday, quite a bit, although there were substantial distractions, I clocked
    a few hours.  But most of that time was drained away by a preference switch back to pycharm; thus run up a new venv, 
    then trying to get the 'photo's of the triangles to inline into notebook. Bah! Just call it 2hrs actually 'on point'.

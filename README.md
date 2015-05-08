@@ -11,7 +11,7 @@
 - [`app.py`](app.py) is an accumulation of keep code 
 - [`timesheet.md`](timesheet.md) maps where the all time goes
 
-![Plot of two heads](snapshot.png?raw=true "Plot of two heads")
+![Plot of two heads](canobox/snapshot.png?raw=true "Plot of two heads")
 
 ---
 
