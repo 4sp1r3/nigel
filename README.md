@@ -1,20 +1,4 @@
-=======
-# References
-
-"Elements of Evolutionary Algorithms" Lecture Slides  
-http://lmarti.com/wp-content/uploads/2014/09/02-elements-of-eas.pdf  
-http://lmarti.com/aec-2014  
-"DEAP - Enabling Nimbler Evolutions" - SIGEvolution Vol 6 Issue 2
-"DEAP: A python framework for Evolutionary Algorithms"
-"DEAP: Evolutionary Algorithms made easy" - Journal of machine learning Research 2012.
-
-Distributed Evolutionary Algorithms in Python  
-https://github.com/DEAP/deap  
-http://deap.readthedocs.org/en/master/  
-https://github.com/DEAP/notebooks  
-
-
-# Setup on OS X (Yosemite)
+# Setting up Canopy (OS X Yosemite)
 
 - Install [Canopy Express](https://store.enthought.com/downloads/)
 - Change `Preferences->Notebook->PyLab Backend` to `Interactive (wx)`.
@@ -28,7 +12,11 @@ https://github.com/DEAP/notebooks
 - [`timesheet.md`](timesheet.md) maps where the all time goes
 
 ![Plot of two heads](snapshot.png?raw=true "Plot of two heads")
-=======
+
+---
+
+# Setting up a (true) Python environment on OS X 
+
 Let's assume you have *nothing*, although that does lengthen the list of prerequisites a little.
 
 ## Prerequisites
@@ -194,14 +182,18 @@ A browser window will open. There are perhaps some notebooks in there.
 (optional) We'll want the numpy library sooner or later so try installing it now (`pip install numpy`)
 
 
+---
+
 # References
 
 "Elements of Evolutionary Algorithms" Lecture Slides  
 http://lmarti.com/wp-content/uploads/2014/09/02-elements-of-eas.pdf  
 http://lmarti.com/aec-2014  
+"DEAP - Enabling Nimbler Evolutions" - SIGEvolution Vol 6 Issue 2
+"DEAP: A python framework for Evolutionary Algorithms"
+"DEAP: Evolutionary Algorithms made easy" - Journal of machine learning Research 2012.
 
 Distributed Evolutionary Algorithms in Python  
 https://github.com/DEAP/deap  
 http://deap.readthedocs.org/en/master/  
 https://github.com/DEAP/notebooks  
-
