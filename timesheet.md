@@ -98,7 +98,6 @@
 * Worked on the notebook trying to devise the simplest problem to get started with
 
 # INVOICE #1 --- (16hrs)
-
 ## 18 Mar 2015 
 
 * **still working through pete's script, transposing into a workbook**
