@@ -189,9 +189,10 @@ A browser window will open. There are perhaps some notebooks in there.
 "Elements of Evolutionary Algorithms" Lecture Slides  
 http://lmarti.com/wp-content/uploads/2014/09/02-elements-of-eas.pdf  
 http://lmarti.com/aec-2014  
-"DEAP - Enabling Nimbler Evolutions" - SIGEvolution Vol 6 Issue 2
-"DEAP: A python framework for Evolutionary Algorithms"
-"DEAP: Evolutionary Algorithms made easy" - Journal of machine learning Research 2012.
+["DEAP - Enabling Nimbler Evolutions" - SIGEvolution Vol 6 Issue 2](http://nbviewer.ipython.org/github/DEAP/notebooks/blob/master/SIGEvolution.ipynb)
+["DEAP: A python framework for Evolutionary Algorithms"](http://vision.gel.ulaval.ca/~cgagne/pubs/deap-gecco-2012.pdf)
+["DEAP: Evolutionary Algorithms made easy" - Journal of machine learning Research 2012](http://www.jmlr.org/papers/volume13/fortin12a/fortin12a.pdf)
+["Tom's" dummy-node rewrite of the generate routine](https://gist.github.com/macrintr/9876942)
 
 Distributed Evolutionary Algorithms in Python  
 https://github.com/DEAP/deap  
