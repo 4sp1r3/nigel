@@ -182,6 +182,45 @@ A browser window will open. There are perhaps some notebooks in there.
 (optional) We'll want the numpy library sooner or later so try installing it now (`pip install numpy`)
 
 
+### networkx, graphviz, etc for pretty pictures:
+
+On OS X:
+
+
+#### Graphviz
+
+Is a binary package of some age, but brew seems to be on top of it.
+Note this starts **without** the virtualenv activated—brew doesn't behave predictably otherwise:
+```
+$ brew install graphviz
+```
+
+#### Pygraphviz
+
+Now **activate virtualenv**, and I cloned this packages from git because it was unclear if the pypi
+version had python3 support.
+
+```
+$ git clone https://github.com/pygraphviz/pygraphviz.git
+$ cd pygraphviz
+$ python3 setup.py install
+```
+
+#### Networkx
+
+Perfectly straightforward after all that:
+
+```
+(venv)$ pip3 install networkx
+```
+
+If you want it to draw graphs inside the notebook you must declare matplotlib inline:
+
+```
+%matplotlib inline
+```
+
+
 ---
 
 # References
