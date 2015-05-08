@@ -107,6 +107,8 @@ class Triangle(object):
         :param x: int to add to the x coordinate
         :param y: int to add to the y coordinate
         """
+        #TODO: add a "protection" if vertex not in 1-3 then set to something inside 1-3
+        #TODO: add protection to keep it inside some boundaries (eg 640 x 640)
         point = getattr(triangle, vertex)
         point.add(x, y)
         return triangle

@@ -1,5 +1,58 @@
 # Timesheet
 
+## 8 May 2015
+
+* tidy up some of the mess of code and versions and whatnot i've created and commit it and update the johnmee.com
+   edition.
+
+## 7 May 2015 (1pm-6pm 5hrs)
+
+* Nigel came over and, using this document ["DEAP - Enabling Nimbler Evolutions" - SIGEvolution Vol 6 Issue 2](https://www.google.com.au/url?sa=t&rct=j&q=&esrc=s&source=web&cd=1&cad=rja&uact=8&ved=0CB4QFjAA&url=http%3A%2F%2Fvision.gel.ulaval.ca%2F~cgagne%2Fpubs%2Fsigevolution2014.pdf&ei=iRJMVc3ZB8immAWf3IHgCQ&usg=AFQjCNFg8rgyqx61ochAF1ajB04xcNzqrA&bvm=bv.92765956,d.dGY)
+   we worked through the internals of DEAP and examined exactly what the default routines do—and how that
+   differed from Nige's expectations.
+* walked through ["Tom's" generate/treegrow routine](https://gist.github.com/macrintr/9876942) and how it varies from
+   DEAP's default
+* the selection routines don't include a fitness normalised and weighted probablistic routine so we need to
+   write one of those
+* the visualization of the trees being generated is a priority.
+
+# Invoice #3 (38.5hrs, Apr 1-May 6)
+
+## 6 May 2015 (2hrs)
+
+* spoke to neil for 30mins at 9:30am but got pulled away be fbm then
+   wound up not getting back to this till 6:30pm!
+* discovered and reading 3 academic papers on deap 
+    * "DEAP - Enabling Nimbler Evolutions" - SIGEvolution Vol 6 Issue 2
+    * "DEAP: A python framework for Evolutionary Algorithms"
+    * "DEAP: Evolutionary Algorithms made easy" - Journal of machine learning Research 2012.
+
+## 5 May 2015 (11:00-6:00)
+
+* reorientate.  spent most of the day getting it to run a pythagoras problem.
+* At the end of the day it was running although it wasn't finding the answer.
+* poignant questions about how it is:
+   * selecting the next generation
+   * building the initial population
+   * crossing over nodes
+
+## 17 April 2015 (11:00-15:00)
+
+* Got a python notebook and up and running on my hosting and shared it around
+* Worked out the problem with the "None Available" error and the terminals and the depth of the tree, and found
+  an alternative 'generate' routine to try.
+
+## 16 April 2015 (1:00-4:00)
+
+* Went over to Nigels and gleaned what we could from Pete and got Nige up to speed
+
+## 15 April 2015 (11:30-5:00)
+
+* Nigel came over and we spent the day between running up his laptop (i had a flat battery on the bike so he came to me)
+* running up yet another sample, this time 'find the dot on this photo'
+* same issue generating populations - 'cannot choose from empty sequence'—trying to add a primitive which returns
+   a photo, but there are none; just the inputs.
+
 ## 13 April 2015 (9-1 4hrs)
 
 * add some primitive primitives (add, subtract, loop). I confess I'm not very confident it will work but that's the

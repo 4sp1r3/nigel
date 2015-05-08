@@ -33,10 +33,9 @@ def get_pset():
     """
     pset = gp.PrimitiveSetTyped(
         "MAIN",             # Name seems to be an arbritrary string
-        [Photo, Triangle],  # Input types: a Photo and a Head
-        Triangle            # Output type: a Head
+        [Photo, Triangle],  # Input types: a Photo and a Triangle
+        Triangle            # Output type: a triangle
     )
-
 
     # Terminals
     pset.addTerminal(False, bool)
@@ -115,7 +114,7 @@ def get_toolbox(pset):
         Apply the program to pairs of triangles in the sample set.  Tally up the differences
         between the output and the goal.
         """
-        print(individual)
+        #print(individual)
         program = toolbox.compile(expr=individual)
         total = 0.0
         input_triangle = TRIANGLES[0]

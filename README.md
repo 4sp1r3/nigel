@@ -1,3 +1,19 @@
+=======
+# References
+
+"Elements of Evolutionary Algorithms" Lecture Slides  
+http://lmarti.com/wp-content/uploads/2014/09/02-elements-of-eas.pdf  
+http://lmarti.com/aec-2014  
+"DEAP - Enabling Nimbler Evolutions" - SIGEvolution Vol 6 Issue 2
+"DEAP: A python framework for Evolutionary Algorithms"
+"DEAP: Evolutionary Algorithms made easy" - Journal of machine learning Research 2012.
+
+Distributed Evolutionary Algorithms in Python  
+https://github.com/DEAP/deap  
+http://deap.readthedocs.org/en/master/  
+https://github.com/DEAP/notebooks  
+
+
 # Setup on OS X (Yosemite)
 
 - Install [Canopy Express](https://store.enthought.com/downloads/)
@@ -12,7 +28,6 @@
 - [`timesheet.md`](timesheet.md) maps where the all time goes
 
 ![Plot of two heads](snapshot.png?raw=true "Plot of two heads")
-
 =======
 Let's assume you have *nothing*, although that does lengthen the list of prerequisites a little.
 
