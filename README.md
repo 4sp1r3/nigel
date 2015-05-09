@@ -149,9 +149,9 @@ gen	nevals	avg    	std    	min	max
 (venv)Johns-iMac:nigel johnmee$
 ```
 
-## Optional Stuff
+# Optional Stuff
 
-### virtualenv
+## virtualenv
 
 https://virtualenv.pypa.io/en/latest/
 
@@ -165,7 +165,7 @@ so I mention it here so you've some idea what it is.
   * activate the env (`source venv/bin/activate`)
   * upgrade pip and setuptools (`pip install -U pip setuptools`)
 
-### python notebook
+## python notebook
 
 http://ipython.org/notebook.html
 
@@ -182,12 +182,12 @@ A browser window will open. There are perhaps some notebooks in there.
 (optional) We'll want the numpy library sooner or later so try installing it now (`pip install numpy`)
 
 
-### networkx, graphviz, etc for pretty pictures:
+## networkx, graphviz, etc for pretty pictures:
 
-On OS X:
+_On OS X:_
 
 
-#### Graphviz
+### Graphviz
 
 Is a binary package of some age, but brew seems to be on top of it.
 Note this starts **without** the virtualenv activated—brew doesn't behave predictably otherwise:
@@ -195,7 +195,7 @@ Note this starts **without** the virtualenv activated—brew doesn't behave pred
 $ brew install graphviz
 ```
 
-#### Pygraphviz
+### Pygraphviz
 
 Now **activate virtualenv**, and I cloned this packages from git because it was unclear if the pypi
 version had python3 support.
@@ -206,7 +206,7 @@ $ cd pygraphviz
 $ python3 setup.py install
 ```
 
-#### Networkx
+### Networkx
 
 Perfectly straightforward after all that:
 
@@ -219,6 +219,20 @@ If you want it to draw graphs inside the notebook you must declare matplotlib in
 ```
 %matplotlib inline
 ```
+
+_On Ubuntu:_
+
+I tried a bunch of things so I'm guessing this is the minimal combination.  Ideally, use the `apt` packaging system.
+If the virtualenv was created with `no-site-packages` [you'll have to undo that](http://stackoverflow.com/questions/3371136/).
+
+### Graphviz
+
+$ sudo apt-get install graphviz
+$ sudo apt-get install python3-matplotlib
+
+### Pygraphviz & Networkx
+
+Thence just use pip, same as above (for OS X).  The pygraphviz had to be the bleeding edge version from git (for py3)
 
 
 ---

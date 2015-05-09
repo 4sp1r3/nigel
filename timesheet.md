@@ -1,9 +1,12 @@
 # Timesheet
 
-## 8 May 2015
+## 8 May 2015 (12pm-8pm 8hrs)
 
-* tidy up some of the mess of code and versions and whatnot i've created and commit it and update the johnmee.com
-   edition.
+* consolidate all the mess of code and versions and repositories scattered about into one repository.  Delete the
+   duplicates and put it up on my github as an authoritative version. run up the johnmee notebook and leave it running
+   Start using the ticketing system there to chart the course and track priorities
+* worked out how to get the plotting of trees happening, then do it within the notebook, then do it on the
+   johnmee.com server, and leave some documentation on how to do it again.
 
 ## 7 May 2015 (1pm-6pm 5hrs)
 

@@ -5,6 +5,8 @@ import random
 import numpy
 import math
 import operator
+import matplotlib.pyplot as plt
+import networkx as nx
 
 from deap import gp
 from deap import creator
@@ -65,6 +67,23 @@ A_RANDOMPOINTS = [RandomPoint() for _ in range(20)]
 # the origin point of the plane
 ORIGIN = Point(0, 0)
 
+
+def draw(individual):
+    """
+    Draws a node tree of the individual
+    """
+    nodes, edges, labels = gp.graph(individual)
+    graph = nx.Graph()
+    graph.add_nodes_from(nodes)
+    graph.add_edges_from(edges)
+    pos = nx.graphviz_layout(graph, prog="dot")
+
+    plt.figure(figsize=(7, 7))
+    nx.draw_networkx_nodes(graph, pos, node_size=900, node_color="w")
+    nx.draw_networkx_edges(graph, pos)
+    nx.draw_networkx_labels(graph, pos, labels)
+    plt.axis("off")
+    plt.show()
 
 def set_creator():
     """
