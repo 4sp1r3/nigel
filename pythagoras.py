@@ -5,8 +5,6 @@ import random
 import numpy
 import math
 import operator
-import matplotlib.pyplot as plt
-import networkx as nx
 
 from deap import gp
 from deap import creator
@@ -14,7 +12,10 @@ from deap import base
 from deap import tools
 from deap import algorithms
 
-from generate2 import generate
+from custom import generate
+#from custom import selWeighted
+from custom import ourSimple
+
 gp.generate = generate
 
 # maximum bound of the x and y point
@@ -35,8 +36,8 @@ class Point(object):
         """
         x and y is a black point on a white photo
         """
-        self.x = x
-        self.y = y
+        self.x = float(x)
+        self.y = float(y)
 
     def __repr__(self):
         return "Point(%s, %s)" % (self.x, self.y)
@@ -50,7 +51,7 @@ class Point(object):
     @staticmethod
     def distance(this, that):
         """Return the distance between the point on this and the point provided"""
-        return math.sqrt((this.x - that.x) ** 2 + (this.y - that.y) ** 2)
+        return math.sqrt((this.x - that.x) ** 2.0 + (this.y - that.y) ** 2.0)
 
 
 class RandomPoint(Point):
@@ -67,23 +68,6 @@ A_RANDOMPOINTS = [RandomPoint() for _ in range(20)]
 # the origin point of the plane
 ORIGIN = Point(0, 0)
 
-
-def draw(individual):
-    """
-    Draws a node tree of the individual
-    """
-    nodes, edges, labels = gp.graph(individual)
-    graph = nx.Graph()
-    graph.add_nodes_from(nodes)
-    graph.add_edges_from(edges)
-    pos = nx.graphviz_layout(graph, prog="dot")
-
-    plt.figure(figsize=(7, 7))
-    nx.draw_networkx_nodes(graph, pos, node_size=900, node_color="w")
-    nx.draw_networkx_edges(graph, pos)
-    nx.draw_networkx_labels(graph, pos, labels)
-    plt.axis("off")
-    plt.show()
 
 def set_creator():
     """
@@ -109,32 +93,29 @@ def get_pset():
     )
 
     # a couple of functions that return the x, and y, values of a point
-    pset.addPrimitive(Point.getx, [Point], int, name='getx')
-    pset.addPrimitive(Point.gety, [Point], int, name='gety')
+    pset.addPrimitive(Point.getx, [Point], float, name='getx')
+    pset.addPrimitive(Point.gety, [Point], float, name='gety')
 
     # a set of primitive mathematical functions
-    pset.addPrimitive(operator.add, [int, int], int, name="plus")
-    pset.addPrimitive(operator.sub, [int, int], int, name="minus")
+    pset.addPrimitive(operator.add, [float, float], float, name="plus")
+    pset.addPrimitive(operator.sub, [float, float], float, name="minus")
 
     # a set of intermediate mathematical functions
     square = lambda x: x ** 2
     sqrt = lambda x: math.sqrt(abs(x))
-    pset.addPrimitive(square, [int], int, name="square")
-    pset.addPrimitive(sqrt, [int], float, name="sqrt")
+    pset.addPrimitive(square, [float], float, name="square")
+    pset.addPrimitive(sqrt, [float], float, name="sqrt")
 
-    # create a terminal for every int or point
-    pset.addEphemeralConstant("Rint", lambda: random.randint(0, PLANE_SIZE), int)
+    # create a terminal for every int
+    #pset.addEphemeralConstant("Rint", lambda: random.randint(0, PLANE_SIZE), int)
 
     # the origin is a terminal
-    pset.addTerminal(ORIGIN, Point, "Origin")
+    #pset.addTerminal(ORIGIN, Point, "O")
 
     # give the input args more meaningful names
-    pset.renameArguments(ARG0='in_point')
+    pset.renameArguments(ARG0='P')
     return pset
 
-
-# TODO: change everything to floats or Decimal
-#   which will overcome error "int too large to convert to float"
 
 def get_toolbox(pset):
     """
@@ -154,10 +135,14 @@ def get_toolbox(pset):
         #print(individual)
         program = toolbox.compile(expr=individual)
         score = 0
-        for point_in in A_RANDOMPOINTS:
-            program_distance = program(point_in)
-            true_distance = math.hypot(point_in.x, point_in.y)
-            score += min(10000, abs(true_distance - program_distance))
+        try:
+            for point_in in A_RANDOMPOINTS:
+                program_distance = program(point_in)
+                true_distance = math.hypot(point_in.x, point_in.y)
+                score += abs(true_distance - program_distance)
+        except OverflowError:
+            # just leave score at whatever before the maximum
+            pass
         return score,
 
     toolbox.register("evaluate", eval_func)
@@ -166,73 +151,6 @@ def get_toolbox(pset):
     toolbox.register("expr_mut", gp.genGrow, min_=0, max_=5)
     toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset)
     return toolbox
-
-
-def ourSimple(population, toolbox, cxpb, mutpb, ngen, stats=None,
-             halloffame=None, verbose=__debug__):
-    """This algorithm reproduce the simplest evolutionary algorithm as
-    presented in chapter 7 of [Back2000]_.
-
-    :param population: A list of individuals.
-    :param toolbox: A :class:`~deap.base.Toolbox` that contains the evolution
-                    operators.
-    :param cxpb: The probability of mating two individuals.
-    :param mutpb: The probability of mutating an individual.
-    :param ngen: The number of generation.
-    :param stats: A :class:`~deap.tools.Statistics` object that is updated
-                  inplace, optional.
-    :param halloffame: A :class:`~deap.tools.HallOfFame` object that will
-                       contain the best individuals, optional.
-    :param verbose: Whether or not to log the statistics.
-    :returns: The final population
-    :returns: A class:`~deap.tools.Logbook` with the statistics of the
-              evolution
-    """
-    logbook = tools.Logbook()
-    logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
-
-    # Evaluate the individuals with an invalid fitness
-    invalid_ind = [ind for ind in population if not ind.fitness.valid]
-    fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
-    for ind, fit in zip(invalid_ind, fitnesses):
-        ind.fitness.values = fit
-
-    if halloffame is not None:
-        halloffame.update(population)
-
-    record = stats.compile(population) if stats else {}
-    logbook.record(gen=0, nevals=len(invalid_ind), **record)
-    if verbose:
-        print(logbook.stream)
-
-    # Begin the generational process
-    for gen in range(1, ngen + 1):
-        # Select the next generation individuals
-        offspring = toolbox.select(population, len(population)/3)
-
-        # Vary the pool of individuals
-        offspring = gp.varAnd(offspring, toolbox, cxpb, mutpb)
-
-        # Evaluate the individuals with an invalid fitness
-        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
-        for ind, fit in zip(invalid_ind, fitnesses):
-            ind.fitness.values = fit
-
-        # Update the hall of fame with the generated individuals
-        if halloffame is not None:
-            halloffame.update(offspring)
-
-        # Replace the current population by the offspring
-        population[:] = offspring
-
-        # Append the current generation statistics to the logbook
-        record = stats.compile(population) if stats else {}
-        logbook.record(gen=gen, nevals=len(invalid_ind), **record)
-        if verbose:
-            print(logbook.stream)
-
-    return population, logbook
 
 
 def run(toolbox):
