@@ -1,5 +1,19 @@
 # Timesheet
 
+## 11 May 2015 (9hrs)
+
+* built a generator which doesn't suffer from the pitfalls of the default ones:
+  - can handle not having terminals, or primitives, of the type it finds itself needing
+  - can grow a tree of the specified depth, not more (although maybe less)
+  - doesn't raise exceptions (unless there is something genuinely wrong)
+* it can now return a program which solves pythagorus (albeit not very efficiently).
+
+## 9 May 2015 (2hrs)
+
+* pushed it out to johnmee.com and repeated the process of getting the graphing to work, this time on Linux
+* tidied up the notebook demo ready for Neil
+* made a start on the normalized selection requirements
+
 ## 8 May 2015 (12pm-8pm 8hrs)
 
 * consolidate all the mess of code and versions and repositories scattered about into one repository.  Delete the

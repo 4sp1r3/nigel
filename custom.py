@@ -1,99 +1,94 @@
 import sys
 import random
 from inspect import isclass
-from operator import attrgetter
+# from operator import attrgetter
+# from deap.gp import __type__
+
 import matplotlib.pyplot as plt
 import networkx as nx
 
 from deap import tools
 from deap.gp import graph as gph
-from deap.gp import __type__
 from deap.algorithms import varAnd
+from deap.gp import PrimitiveTree
 
 
-# something that given a population normalizes the fitness scores 0..1
-# class NormalisedPopulationWeightedFitness(Fitness):
-#     pass
-#
-#
-# def selWeighted(individuals, k):
-#     """Select *k* individuals among the input *individuals*. The
-#     list returned contains references to the input *individuals*.
-#
-#     :param individuals: A list of individuals to select from.
-#     :param k: The number of individuals to select.
-#     :returns: A list containing k individuals.
-#
-#     The individuals returned are randomly selected from individuals according
-#     to their fitness such that the more fit the individual the more likely
-#     that individual will be chosen.  Less fit individuals are less likely, but
-#     still possibly, selected.
-#     """
-#     # Evaluate the individuals with an invalid fitness
-#     # for ind in individuals:
-#     #     if not getattr(ind.fitness, "values", False):
-#     #         raise Exception("Invalid fitness: you have to ensure all the individuals have fitness values "
-#     #                         "before calling this.")
-#     # pop_fitness = sum([i.fitness.values[0] for i in individuals])
-#     # denom = 1 +
-#     #
-#     return sorted(individuals, key=attrgetter("fitness"), reverse=True)[:k]
+class TerminalsError(Exception): pass
+class PrimitivesError(Exception): pass
 
 
-def generate(pset, min_, max_, condition, type_=__type__):
-    """Generate a Tree as a list of list. The tree is build
-    from the root to the leaves, and it stop growing when the
-    condition is fulfilled.
+def ourGrow(pset, depth, type_=None, max_fails=5, jiggle=2):
+    """Generate an expression tree of depth between *min* and *max*.
 
-    :param pset: A primitive set from wich to select primitives of the trees.
-    :param min_: Minimum height of the produced trees.
-    :param max_: Maximum Height of the produced trees.
-    :param condition: The condition is a function that takes two arguments,
-                      the height of the tree to build and the current
-                      depth in the tree.
-    :param type_: The type that should return the tree when called, when
-                  :obj:`None` (default) no return type is enforced.
-    :returns: A grown tree with leaves at possibly different depths
-              dependending on the condition function.
-
-
-    DUMMY NODE ISSUES
-
-    DEAP will only place terminals if we're at the bottom of a branch.
-    This creates two issues:
-    1. A primitive that takes other primitives as inputs could be placed at the
-        second to last layer.
-        SOLUTION: You need to allow the tree to end whenever the height condition is met,
-                    so create "dummy" terminals for every type possible in the tree.
-    2. A primitive that takes terminals as inputs could be placed above the second to
-        last layer.
-        SOLUTION: You need to allow the tree to continue extending the branch until the
-                    height condition is met, so create "dummy" primitives that just pass
-                    through the terminal types.
-
-    These "dummy" terminals and "dummy" primitives introduce unnecessary and sometimes
-    nonsensical solutions into populations. These "dummy" nodes can be eliminated
-    if the height requirement is relaxed.
-
-
-    HOW TO PREVENT DUMMY NODE ISSUES
-
-    Relaxing the height requirement:
-    When at the bottom of the branch, check for terminals first, then primitives.
-        When checking for primitives, skirt the height requirement by adjusting
-        the branch depth to be the second to last layer of the tree.
-        If neither a terminal or primitive fits this node, then throw an error.
-    When not at the bottom of the branch, check for primitives first, then terminals.
-
-    Issue with relaxing the height requirement:
-    1. Endless loops are possible when primitive sets have any type loops.
-        A primitive with an output of one type may not take an input type of
-        itself or a parent type.
-        SOLUTION: A primitive set must be well-designed to prevent those type loops.
-
+    :param pset: Primitive set from which primitives are selected.
+    :param depth: Height of the produced tree.
+    :param type_: The type that should return the tree when called.
+    :returns: An expression tree with node depths between min to max
     """
+    assert depth != 0
+    if type_ is None:
+        type_ = pset.ret
+
+    # a tree of depth 1 is just a terminal
+    if depth == 1:
+        # if we have some terminals to choose from
+        if pset.terminals[type_]:
+            # return a Terminal
+            term = random.choice(pset.terminals[type_])
+            # and if it's actually a class then instantiate it
+            if isclass(term):
+                term = term()
+            return [term]
+        else:
+            # No terminals of that type available
+            raise TerminalsError("No terminals of type '%s' available" % type_)
+
+    # if there are no primitives of this type try returning a terminal instead
+    # if that doesn't work then raise an error
+    if not pset.primitives[type_]:
+        try:
+            return ourGrow(pset, 1, type_)
+        except TerminalsError:
+            # things are pretty bad if neither terminals nor primitives of that type
+            raise PrimitivesError("No terminals or primitives available of type '%s'" % type_)
+
+    # pick a primitive and grow a tree under each argument
+    primitives = pset.primitives[type_].copy()
+    random.shuffle(primitives)
+    for prim in primitives:
+        fails = 0
+        while fails < max_fails:
+            fails += 1
+            try:
+                expr = [prim]
+                for arg in reversed(prim.args):
+                    expr += ourGrow(pset, depth - 1, arg)
+                tree = PrimitiveTree(expr)
+                if abs(tree.height - depth) <= jiggle:
+                    return expr
+            except TerminalsError:
+                # never mind we'll try again, up to max_fails attempts
+                pass
+    # ran out of primitives
+    raise PrimitivesError("None of the primitives grew into a valid tree (type '%s')" % type_)
+
+
+def toms_generate(pset, min_, max_, condition, type_=None):
+    """
+    as per https://gist.github.com/macrintr/9876942
+    :param pset:
+    :param min_:
+    :param max_:
+    :param condition:
+    :param type_:
+    :return:
+    """
+    if type_ is None:
+        type_ = pset.ret
     expr = []
     height = random.randint(min_, max_)
+    # stack is the nodes we need to fill (depth, result type)
+    # push the root node
     stack = [(0, type_)]
     while len(stack) != 0:
         depth, type_ = stack.pop()
@@ -102,22 +97,22 @@ def generate(pset, min_, max_, condition, type_=__type__):
             # Try finding a terminal
             try:
                 term = random.choice(pset.terminals[type_])
-
+                # if it's a class instansiate it
                 if isclass(term):
                     term = term()
                 expr.append(term)
-                # No terminal fits
-            except:
-                # So pull the depth back one layer, and start looking for primitives
+            # No terminals available,
+            # so pull the depth back one layer, and append a primitive and
+            # push it's args onto the stack
+            except IndexError:
                 try:
                     depth -= 1
                     prim = random.choice(pset.primitives[type_])
-
                     expr.append(prim)
                     for arg in reversed(prim.args):
                         stack.append((depth + 1, arg))
 
-                        # No primitive fits, either - that's an error
+                # No primitives fit either, so raise an error
                 except IndexError:
                     e = IndexError("The gp.generate function tried to add "
                                    "a primitive of type '%s', but there is "
@@ -129,7 +124,6 @@ def generate(pset, min_, max_, condition, type_=__type__):
         else:
             # Check for primitives
             try:
-                # JM: Type is None means we can use any primitive, right?
                 if type_ is None:
                     all_prims = list()
                     for typ in pset.primitives.keys():
@@ -171,6 +165,36 @@ def generate(pset, min_, max_, condition, type_=__type__):
                 expr.append(term)
 
     return expr
+
+
+
+
+# def condition(height, depth):
+    #     """Expression generation stops when the depth is equal to height
+    #     or when it is randomly determined that a a node should be a terminal.
+    #     """
+    #     return depth >= height or \
+    #            (depth >= min_ and random.random() < pset.terminalRatio)
+    #
+    # return generate(pset, min_, max_, condition, type_)
+
+
+#def generate(pset, min_, max_, condition, type_=__type__):
+    # """Generate a Tree as a list of list. The tree is build
+    # from the root to the leaves, and it stop growing when the
+    # condition is fulfilled.
+    #
+    # :param pset: A primitive set from wich to select primitives of the trees.
+    # :param min_: Minimum height of the produced trees.
+    # :param max_: Maximum Height of the produced trees.
+    # :param condition: The condition is a function that takes two arguments,
+    #                   the height of the tree to build and the current
+    #                   depth in the tree.
+    # :param type_: The type that should return the tree when called, when
+    #               :obj:`None` (default) no return type is enforced.
+    # :returns: A grown tree with leaves at possibly different depths
+    #           dependending on the condition function.
+    # """
 
 
 def ourSimple(population, toolbox, cxpb, mutpb, ngen, stats=None,
@@ -256,3 +280,32 @@ def draw(individual):
     nx.draw_networkx_labels(graph, pos, labels)
     plt.axis("off")
     plt.show()
+
+
+# something that given a population normalizes the fitness scores 0..1
+# class NormalisedPopulationWeightedFitness(Fitness):
+# pass
+#
+#
+# def selWeighted(individuals, k):
+#     """Select *k* individuals among the input *individuals*. The
+#     list returned contains references to the input *individuals*.
+#
+#     :param individuals: A list of individuals to select from.
+#     :param k: The number of individuals to select.
+#     :returns: A list containing k individuals.
+#
+#     The individuals returned are randomly selected from individuals according
+#     to their fitness such that the more fit the individual the more likely
+#     that individual will be chosen.  Less fit individuals are less likely, but
+#     still possibly, selected.
+#     """
+#     # Evaluate the individuals with an invalid fitness
+#     # for ind in individuals:
+#     #     if not getattr(ind.fitness, "values", False):
+#     #         raise Exception("Invalid fitness: you have to ensure all the individuals have fitness values "
+#     #                         "before calling this.")
+#     # pop_fitness = sum([i.fitness.values[0] for i in individuals])
+#     # denom = 1 +
+#     #
+#     return sorted(individuals, key=attrgetter("fitness"), reverse=True)[:k]

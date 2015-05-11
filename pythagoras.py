@@ -12,20 +12,19 @@ from deap import base
 from deap import tools
 from deap import algorithms
 
-from custom import generate
-#from custom import selWeighted
-from custom import ourSimple
+from custom import ourGrow
 
-gp.generate = generate
+#from custom import selWeighted
 
 # maximum bound of the x and y point
-PLANE_SIZE = 8
+PLANE_SIZE = 20
 
 # number of solutions to retain from each generation
-POPULATION_SIZE = 10
+POPULATION_SIZE = 100
 
 # Number of generations to run
-NUM_GENERATIONS = 2
+NUM_GENERATIONS = 100
+
 
 
 class Point(object):
@@ -63,7 +62,7 @@ class RandomPoint(Point):
 
 
 # a series of random points
-A_RANDOMPOINTS = [RandomPoint() for _ in range(20)]
+A_RANDOMPOINTS = [RandomPoint() for _ in range(50)]
 
 # the origin point of the plane
 ORIGIN = Point(0, 0)
@@ -122,7 +121,7 @@ def get_toolbox(pset):
     :return: a configured toolbox
     """
     toolbox = base.Toolbox()
-    toolbox.register("expr", gp.genGrow, pset, min_=2, max_=5)
+    toolbox.register("expr", ourGrow, pset, depth=5)
     toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
     toolbox.register("compile", gp.compile, pset=pset)
@@ -139,7 +138,7 @@ def get_toolbox(pset):
             for point_in in A_RANDOMPOINTS:
                 program_distance = program(point_in)
                 true_distance = math.hypot(point_in.x, point_in.y)
-                score += abs(true_distance - program_distance)
+                score += min(100000, abs(true_distance - program_distance))
         except OverflowError:
             # just leave score at whatever before the maximum
             pass
@@ -148,7 +147,7 @@ def get_toolbox(pset):
     toolbox.register("evaluate", eval_func)
     toolbox.register("select", tools.selBest)
     toolbox.register("mate", gp.cxOnePoint)
-    toolbox.register("expr_mut", gp.genGrow, min_=0, max_=5)
+    toolbox.register("expr_mut", ourGrow, depth=5)
     toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset)
     return toolbox
 
