@@ -23,7 +23,7 @@ PLANE_SIZE = 20
 POPULATION_SIZE = 100
 
 # Number of generations to run
-NUM_GENERATIONS = 100
+NUM_GENERATIONS = 200
 
 
 
@@ -74,7 +74,7 @@ def set_creator():
     :return: None, it adds classes to the module directly
     """
     # A smaller score (distance) is better
-    creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+    creator.create("FitnessMin", base.Fitness, weights=(-1.0,-1.0))
 
     # Every individual is a tree of operations (plus a Fitness class)
     creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin)
@@ -110,6 +110,7 @@ def get_pset():
 
     # the origin is a terminal
     #pset.addTerminal(ORIGIN, Point, "O")
+    pset.addTerminal(0.0, float, "0")
 
     # give the input args more meaningful names
     pset.renameArguments(ARG0='P')
@@ -142,7 +143,8 @@ def get_toolbox(pset):
         except OverflowError:
             # just leave score at whatever before the maximum
             pass
-        return score,
+        tree = gp.PrimitiveTree(individual)
+        return score, tree.height
 
     toolbox.register("evaluate", eval_func)
     toolbox.register("select", tools.selBest)
@@ -167,8 +169,7 @@ def main():
     set_creator()
     pop, logbook = run(get_toolbox(get_pset()))
     for i in sorted(pop, key=lambda i: i.fitness.values[0], reverse=True):
-        print(int(i.fitness.values[0]), i)
-
+        print(int(i.fitness.values[0]), i.fitness.values[1], i)
 
 if __name__ == "__main__":
     main()
