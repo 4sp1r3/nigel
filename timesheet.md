@@ -1,5 +1,17 @@
 # Timesheet
 
+## 12 May 2015 (8hrs)
+
+* prepared pythagoras in a notebook and spent time running through it with Neil
+* set out to add a min tree spec to ourGrow routine, but after several hours it wasn't done.
+* another hour with Neil and we alter the spec to clarify what "min" means, then decide to drop it
+   in favour of a probability—start a node here or put a terminal- effectively specifying
+   how 'dense' the tree should be.
+* head off start down that road
+* wrote up some specs
+* implemented
+* pushed
+
 ## 11 May 2015 (9hrs)
 
 * built a generator which doesn't suffer from the pitfalls of the default ones:

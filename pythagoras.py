@@ -74,7 +74,7 @@ def set_creator():
     :return: None, it adds classes to the module directly
     """
     # A smaller score (distance) is better
-    creator.create("FitnessMin", base.Fitness, weights=(-1.0,-1.0))
+    creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
 
     # Every individual is a tree of operations (plus a Fitness class)
     creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin)
@@ -110,7 +110,6 @@ def get_pset():
 
     # the origin is a terminal
     #pset.addTerminal(ORIGIN, Point, "O")
-    pset.addTerminal(0.0, float, "0")
 
     # give the input args more meaningful names
     pset.renameArguments(ARG0='P')
@@ -122,7 +121,7 @@ def get_toolbox(pset):
     :return: a configured toolbox
     """
     toolbox = base.Toolbox()
-    toolbox.register("expr", ourGrow, pset, depth=5)
+    toolbox.register("expr", ourGrow, pset, max_=5, prob=0.0)
     toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
     toolbox.register("compile", gp.compile, pset=pset)
@@ -144,12 +143,12 @@ def get_toolbox(pset):
             # just leave score at whatever before the maximum
             pass
         tree = gp.PrimitiveTree(individual)
-        return score, tree.height
+        return score + tree.height,
 
     toolbox.register("evaluate", eval_func)
     toolbox.register("select", tools.selBest)
     toolbox.register("mate", gp.cxOnePoint)
-    toolbox.register("expr_mut", ourGrow, depth=5)
+    toolbox.register("expr_mut", ourGrow, max_=10, prob=0.5)
     toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset)
     return toolbox
 
@@ -169,7 +168,8 @@ def main():
     set_creator()
     pop, logbook = run(get_toolbox(get_pset()))
     for i in sorted(pop, key=lambda i: i.fitness.values[0], reverse=True):
-        print(int(i.fitness.values[0]), i.fitness.values[1], i)
+        print(int(i.fitness.values[0]), i)
+
 
 if __name__ == "__main__":
     main()
