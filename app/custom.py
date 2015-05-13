@@ -153,35 +153,6 @@ def draw(individual):
     plt.show()
 
 
-# something that given a population normalizes the fitness scores 0..1
-# class NormalisedPopulationWeightedFitness(Fitness):
-# pass
-#
-#
-# def selWeighted(individuals, k):
-#     """Select *k* individuals among the input *individuals*. The
-#     list returned contains references to the input *individuals*.
-#
-#     :param individuals: A list of individuals to select from.
-#     :param k: The number of individuals to select.
-#     :returns: A list containing k individuals.
-#
-#     The individuals returned are randomly selected from individuals according
-#     to their fitness such that the more fit the individual the more likely
-#     that individual will be chosen.  Less fit individuals are less likely, but
-#     still possibly, selected.
-#     """
-#     # Evaluate the individuals with an invalid fitness
-#     # for ind in individuals:
-#     #     if not getattr(ind.fitness, "values", False):
-#     #         raise Exception("Invalid fitness: you have to ensure all the individuals have fitness values "
-#     #                         "before calling this.")
-#     # pop_fitness = sum([i.fitness.values[0] for i in individuals])
-#     # denom = 1 +
-#     #
-#     return sorted(individuals, key=attrgetter("fitness"), reverse=True)[:k]
-
-
 def toms_generate(pset, min_, max_, condition, type_=None):
     """
     as per https://gist.github.com/macrintr/9876942
