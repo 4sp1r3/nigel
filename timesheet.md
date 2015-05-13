@@ -1,5 +1,11 @@
 # Timesheet
 
+## 13 May 2015 (6hrs)
+
+* set up the Draw-Trees notebook to exhibit ourGrow
+* code tidy and working out how to attack the selection problem
+* create the "probablistic selection" routine for #2
+
 ## 12 May 2015 (8hrs)
 
 * prepared pythagoras in a notebook and spent time running through it with Neil
