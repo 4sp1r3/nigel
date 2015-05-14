@@ -12,9 +12,8 @@ from deap import base
 from deap import tools
 from deap import algorithms
 
-from custom import ourGrow
-
-#from custom import selWeighted
+from .custom import ourGrow
+from .ourMods import selProbablistic
 
 # maximum bound of the x and y point
 PLANE_SIZE = 20
@@ -146,7 +145,7 @@ def get_toolbox(pset):
         return score + tree.height,
 
     toolbox.register("evaluate", eval_func)
-    toolbox.register("select", tools.selBest)
+    toolbox.register("select", selProbablistic)
     toolbox.register("mate", gp.cxOnePoint)
     toolbox.register("expr_mut", ourGrow, max_=10, prob=0.5)
     toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset)

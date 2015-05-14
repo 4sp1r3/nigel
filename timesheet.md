@@ -1,5 +1,12 @@
 # Timesheet
 
+## 14 May 2015 (6hrs)
+
+* tried the new selection routine on Pythag; the avg fit score fluctuates wildly from generation
+   to generation
+* discussed crossover with Neil and knocked up specs, got started on it.
+* worked up the crossover routine, and a notebook to demonstrate it, and commit
+
 ## 13 May 2015 (6hrs)
 
 * set up the Draw-Trees notebook to exhibit ourGrow

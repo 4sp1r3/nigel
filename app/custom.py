@@ -1,70 +1,14 @@
 import sys
 import random
-from inspect import isclass
 # from operator import attrgetter
 # from deap.gp import __type__
 
-import matplotlib.pyplot as plt
-import networkx as nx
 
 from deap import tools
-from deap.gp import graph as gph
 from deap.algorithms import varAnd
 from deap.gp import PrimitiveTree
 
 
-class DeadBranchError(Exception): pass
-
-
-def ourGrow(pset, max_, type_=None, prob=0.2):
-    """Generate an expression tree of depth between *min* and *max*.
-
-    :param pset: Primitive set from which primitives are selected.
-    :param max_: Maximum height of the produced tree.
-    :param prob: 0..1 probability of  Terminating now
-    :param type_: The type that should return the tree when called.
-    :returns: An expression tree with node depths between min to max
-    """
-    def random_terminal():
-        terminals = pset.terminals[type_]
-        if len(terminals) == 0:
-            raise DeadBranchError("No terminal of type '%s' is available" % type_)
-        else:
-            term = random.choice(terminals)
-            # and if it's actually a class then instantiate it
-            if isclass(term):
-                term = term()
-            return [term]
-
-    if type_ is None:
-        type_ = pset.ret
-
-    # we're at the maximum depth, or there are no primitives to try
-    if max_ <= 1 or not len(pset.primitives[type_]):
-        return random_terminal()
-
-    # if chance dictates, return a terminal, if you can
-    try:
-        if prob > random.random():
-            return random_terminal()
-    except DeadBranchError:
-        # No problem, press on, we'll try the prims.
-        pass
-
-    primitives = pset.primitives[type_].copy()
-    random.shuffle(primitives)
-    for prim in primitives:
-        try:
-            expr = [prim]
-            for arg in reversed(prim.args):
-                expr += ourGrow(pset, max_-1, arg, prob)
-            return expr
-        except DeadBranchError:
-            # ok, this prim is no good, but press on and try others
-            pass
-
-    # exhausted all terminals and primitives
-    raise DeadBranchError("Neither primitives nor terminals of type '%s' could be found" % type_)
 
 
 
@@ -133,24 +77,6 @@ def ourSimple(population, toolbox, cxpb, mutpb, ngen, stats=None,
             print(logbook.stream)
 
     return population, logbook
-
-
-def draw(individual):
-    """
-    Draws a node tree of the individual
-    """
-    nodes, edges, labels = gph(individual)
-    graph = nx.Graph()
-    graph.add_nodes_from(nodes)
-    graph.add_edges_from(edges)
-    pos = nx.graphviz_layout(graph, prog="dot")
-
-    plt.figure(figsize=(10, individual.height + 1))
-    nx.draw_networkx_nodes(graph, pos, node_size=900, node_color="w")
-    nx.draw_networkx_edges(graph, pos)
-    nx.draw_networkx_labels(graph, pos, labels)
-    plt.axis("off")
-    plt.show()
 
 
 def toms_generate(pset, min_, max_, condition, type_=None):
