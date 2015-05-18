@@ -110,8 +110,6 @@ def cxPTreeGraft(receiver, contributor, Individual):
     # pick the receiving node
     receiving_nodes = []
     for idx, node in enumerate(receiver):
-        if idx == 0:
-            continue
         if node.ret is graft_type:
             receiving_nodes.append(idx)
     receiver_node_idx = random.choice(receiving_nodes)

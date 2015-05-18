@@ -139,8 +139,7 @@ def eval_func(individual):
     except OverflowError:
         # just leave score at whatever before the maximum
         pass
-    tree = gp.PrimitiveTree(individual)
-    return score + tree.height * 10,
+    return score + len(individual) * 5,
 
 toolbox.register("evaluate", eval_func)
 toolbox.register("select", selProbablistic)
