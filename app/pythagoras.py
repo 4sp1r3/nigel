@@ -10,10 +10,11 @@ from deap import gp
 from deap import creator
 from deap import base
 from deap import tools
-from deap import algorithms
 
-from .custom import ourGrow
-from .ourMods import selProbablistic
+from app.ourMods import genGrow
+from app.ourMods import selProbablistic
+from app.ourMods import cxPTreeGraft
+#from app.ourMods import eaNigel
 
 # maximum bound of the x and y point
 PLANE_SIZE = 20
@@ -64,7 +65,7 @@ class RandomPoint(Point):
 A_RANDOMPOINTS = [RandomPoint() for _ in range(50)]
 
 # the origin point of the plane
-ORIGIN = Point(0, 0)
+# ORIGIN = Point(0, 0)
 
 
 def set_creator():
@@ -120,7 +121,7 @@ def get_toolbox(pset):
     :return: a configured toolbox
     """
     toolbox = base.Toolbox()
-    toolbox.register("expr", ourGrow, pset, max_=5, prob=0.0)
+    toolbox.register("expr", genGrow, pset, max_=5, prob=0.0)
     toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
     toolbox.register("compile", gp.compile, pset=pset)
@@ -146,8 +147,8 @@ def get_toolbox(pset):
 
     toolbox.register("evaluate", eval_func)
     toolbox.register("select", selProbablistic)
-    toolbox.register("mate", gp.cxOnePoint)
-    toolbox.register("expr_mut", ourGrow, max_=10, prob=0.5)
+    toolbox.register("mate", cxPTreeGraft)
+    toolbox.register("expr_mut", genGrow, max_=10, prob=0.5)
     toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset)
     return toolbox
 
@@ -160,7 +161,7 @@ def run(toolbox):
     stats.register("std", numpy.std)
     stats.register("max", numpy.max)
     stats.register("min", numpy.min)
-    return algorithms.eaSimple(pop, toolbox, 0.90, 0.10, NUM_GENERATIONS, stats, halloffame=hof)
+    return eaNigel(pop, toolbox, 0.90, 0.10, NUM_GENERATIONS, stats, halloffame=hof)
 
 
 def main():

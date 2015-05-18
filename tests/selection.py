@@ -5,7 +5,7 @@ from deap import creator
 from deap import base
 from deap import tools
 from deap import gp
-from app.custom import ourGrow
+from app.ourMods import genGrow
 from app.ourMods import selProbablistic
 
 
@@ -30,7 +30,7 @@ class ProbablisticSelectionTestCase(unittest.TestCase):
 
         # the toolbox
         toolbox = base.Toolbox()
-        toolbox.register("expr", ourGrow, pset, max_=2, prob=0.0)
+        toolbox.register("expr", genGrow, pset, max_=2, prob=0.0)
         toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr)
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
         self.toolbox = toolbox

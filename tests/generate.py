@@ -6,8 +6,8 @@ from deap import base
 from deap.gp import PrimitiveTree, PrimitiveSetTyped, Terminal
 
 
-from pythagoras import Point
-from custom import ourGrow, DeadBranchError
+from app.pythagoras import Point
+from app.ourMods import genGrow, DeadBranchError
 
 
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
@@ -49,47 +49,47 @@ class GrowTestCase(unittest.TestCase):
         self.pset = get_pset()
 
     def test_terminals(self):
-        self.assertRaises(DeadBranchError, ourGrow, self.pset, 1, float)
-        tree = ourGrow(self.pset, 1, Point)
+        self.assertRaises(DeadBranchError, genGrow, self.pset, 1, float)
+        tree = genGrow(self.pset, 1, Point)
         self.assertIsInstance(tree[0], Terminal)
         print(PrimitiveTree(tree).height, [node.name for node in tree])
 
     def test_depth_2(self):
         # try a float
-        tree = PrimitiveTree(ourGrow(self.pset, 2, float))
+        tree = PrimitiveTree(genGrow(self.pset, 2, float))
         print(tree.height, tree)
         self.assertLessEqual(tree.height, 2)
         # try a point
-        tree = PrimitiveTree(ourGrow(self.pset, 2, Point))
+        tree = PrimitiveTree(genGrow(self.pset, 2, Point))
         print(tree.height, tree)
         self.assertLessEqual(tree.height, 2)
 
     def test_depth_3(self):
         # try a float
-        tree = PrimitiveTree(ourGrow(self.pset, 3, float))
+        tree = PrimitiveTree(genGrow(self.pset, 3, float))
         print("f", tree.height, tree)
         self.assertLessEqual(tree.height, 3)
         # try a point
-        tree = PrimitiveTree(ourGrow(self.pset, 3, Point))
+        tree = PrimitiveTree(genGrow(self.pset, 3, Point))
         print("p", tree.height, tree)
         self.assertLessEqual(tree.height, 3)
 
     def test_depth_4(self):
         # try a float
-        tree = PrimitiveTree(ourGrow(self.pset, 4, float))
+        tree = PrimitiveTree(genGrow(self.pset, 4, float))
         print("f", tree.height, tree)
         self.assertLessEqual(tree.height, 4)
         # try a point
-        tree = PrimitiveTree(ourGrow(self.pset, 4, Point, 0.0))
+        tree = PrimitiveTree(genGrow(self.pset, 4, Point, 0.0))
         print("p", tree.height, tree)
         self.assertLessEqual(tree.height, 4)
 
     def test_depth_20(self):
         # try a float
-        tree = PrimitiveTree(ourGrow(self.pset, 20, float))
+        tree = PrimitiveTree(genGrow(self.pset, 20, float))
         print("f", tree.height, tree)
         self.assertLessEqual(tree.height, 20)
         # try a point
-        tree = PrimitiveTree(ourGrow(self.pset, 20, Point, 0.0))
+        tree = PrimitiveTree(genGrow(self.pset, 20, Point, 0.0))
         print("p", tree.height, tree)
         self.assertLessEqual(tree.height, 20)

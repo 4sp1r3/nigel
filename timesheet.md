@@ -1,5 +1,14 @@
 # Timesheet
 
+## 18 May 2015
+
+* fix #7
+* having trouble with pythagoras and the app hierarchy... are we running a notebook, a module, a test?
+* started working through an algorithm (pick clone, mate, mutate)
+* find and fix bug in Crossover routine
+* created our own algorithm to run based on 30/30/30-clone/mate/mutate
+* now solving pythagoras again
+
 ## 14 May 2015 (6hrs)
 
 * tried the new selection routine on Pythag; the avg fit score fluctuates wildly from generation

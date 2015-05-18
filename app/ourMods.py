@@ -1,4 +1,5 @@
 import random
+import copy
 from inspect import isclass
 
 import matplotlib.pyplot as plt
@@ -6,9 +7,87 @@ import networkx as nx
 
 from deap.gp import graph as gph
 from deap.gp import PrimitiveTree
+from deap.tools import Logbook
 
 
-def cxPTreeGraft(receiver, contributor):
+def eaNigel(population, toolbox, goal, ngen, stats=None,
+             halloffame=None, verbose=__debug__):
+    """This algorithm is a simple evolutionary algorithm.
+
+    :param population: A list of individuals.
+    :param toolbox: A :class:`~deap.base.Toolbox` that contains the evolution
+                    operators.
+    :param ngen: The number of generation.
+    :param stats: A :class:`~deap.tools.Statistics` object that is updated
+                  inplace, optional.
+    :param halloffame: A :class:`~deap.tools.HallOfFame` object that will
+                       contain the best individuals, optional.
+    :param verbose: Whether or not to log the statistics.
+    :returns: The final population
+    :returns: A class:`~deap.tools.Logbook` with the statistics of the
+              evolution
+    """
+    logbook = Logbook()
+    logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
+
+    # Evaluate the individuals with an invalid fitness
+    invalid_ind = [ind for ind in population if not ind.fitness.valid]
+    fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+    for ind, fit in zip(invalid_ind, fitnesses):
+        ind.fitness.values = fit
+
+    if halloffame is not None:
+        halloffame.update(population)
+
+    record = stats.compile(population) if stats else {}
+    logbook.record(gen=0, nevals=len(invalid_ind), **record)
+
+    # Begin the generational process
+    gen = 0
+    while halloffame[0].fitness.values[0] > goal and gen < ngen:
+        # Select the next generation individuals
+        offspring = toolbox.procreate(population)
+
+        # Update the hall of fame with the generated individuals
+        if halloffame is not None:
+            halloffame.update(offspring)
+
+        # Replace the current population by the offspring
+        population[:] = offspring
+
+        # Append the current generation statistics to the logbook
+        record = stats.compile(population) if stats else {}
+        gen += 1
+        logbook.record(gen=gen, nevals=len(invalid_ind), **record)
+        print(logbook.stream)
+
+    return population, logbook
+
+
+def procreate(pop, toolbox):
+    """Create a new population from the given one
+
+    :returns: a list of individuals
+    """
+    offspring = []
+    for idx in range(len(pop)):
+        action = random.randint(1, 3)
+        if action == 1:
+            ind = toolbox.select(pop, 1)[0]
+            baby = toolbox.clone(ind)
+        elif action == 2:
+            dad, mum = toolbox.select(pop, 2)
+            baby = toolbox.mate(dad, mum)
+        else:
+            ind = toolbox.select(pop, 1)[0]
+            baby = toolbox.mutate(ind)[0]
+        baby.fitness.values = toolbox.evaluate(baby)
+        offspring.append(baby)
+    return offspring
+
+
+
+def cxPTreeGraft(receiver, contributor, Individual):
     """Grafts a branch from the contributor onto the receiver.
 
     :param receiver: A PrimitiveTree which will receive a branch; the root is not changed
@@ -21,24 +100,40 @@ def cxPTreeGraft(receiver, contributor):
 
     # find and randomly choose the type of node to graft at
     types1 = set([node.ret for node in receiver[1:]])
-    types2 = set([node.ret for node in contributor[1:]])
+    types2 = set([node.ret for node in contributor])
     common_types = types1.intersection(types2)
     try:
         graft_type = random.choice(list(common_types))
     except IndexError:
         raise GraftingError("The two individuals do not have any nodes of the same type.")
 
-    # pick the grafting nodes
-    receiving_node = random.choice([(i, node) for i, node in enumerate(receiver) if node.ret is graft_type])
-    contributed_node = random.choice([(i, node) for i, node in enumerate(contributor) if node.ret is graft_type])
+    # pick the receiving node
+    receiving_nodes = []
+    for idx, node in enumerate(receiver):
+        if idx == 0:
+            continue
+        if node.ret is graft_type:
+            receiving_nodes.append(idx)
+    receiver_node_idx = random.choice(receiving_nodes)
+
+    # pick the contributing node
+    contributing_nodes = []
+    for idx, node in enumerate(contributor):
+        if node.ret is graft_type:
+            contributing_nodes.append(idx)
+    contributor_node_idx = random.choice(contributing_nodes)
 
     # graft the contributed slice onto a copy of the receiver
     child = receiver.copy()
-    prune_slice = receiver.searchSubtree(receiving_node[0])
-    contributed_slice = contributor.searchSubtree(contributed_node[0])
+    prune_slice = receiver.searchSubtree(receiver_node_idx)
+    contributed_slice = contributor.searchSubtree(contributor_node_idx)
     child[prune_slice] = contributor[contributed_slice]
 
-    return PrimitiveTree(child)
+    return Individual(child)
+
+
+class DeadBranchError(Exception):
+    pass
 
 
 def genGrow(pset, max_, type_=None, prob=0.2):
@@ -51,9 +146,6 @@ def genGrow(pset, max_, type_=None, prob=0.2):
     :param type_: The type that the tree should return when called.
     :returns: An expression tree.
     """
-    class DeadBranchError(Exception): pass
-
-
     def random_terminal():
         terminals = pset.terminals[type_]
         if len(terminals) == 0:
@@ -149,7 +241,7 @@ def draw(individual):
     graph.add_edges_from(edges)
     pos = nx.graphviz_layout(graph, prog="dot")
 
-    plt.figure(figsize=(10, individual.height + 1))
+    plt.figure(figsize=(12, individual.height + 1))
     nx.draw_networkx_nodes(graph, pos, node_size=900, node_color="w")
     nx.draw_networkx_edges(graph, pos)
     nx.draw_networkx_labels(graph, pos, labels)
