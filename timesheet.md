@@ -1,6 +1,6 @@
 # Timesheet
 
-## 18 May 2015
+## 18 May 2015 (6hrs)
 
 * fix #7
 * having trouble with pythagoras and the app hierarchy... are we running a notebook, a module, a test?
