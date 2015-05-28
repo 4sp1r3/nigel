@@ -1,5 +1,17 @@
 # Timesheet
 
+## May 22 - May 27
+
+* the great hard drive crash of 2015
+
+## 19 May 2015 (2hrs)
+
+* a few tweaks to pythagoras with neil
+* implemented then trying to get something sensible out of the history, but not getting any satisfaction
+    just some unintelligible graphs.  The solutions just appear without any recorded parentage :-(
+
+# Invoice #4 (50hrs May 7 - May 18) PAID.
+
 ## 18 May 2015 (6hrs)
 
 * fix #7

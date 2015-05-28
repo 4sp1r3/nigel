@@ -1,17 +1,15 @@
 import random
-import copy
 from inspect import isclass
 
 import matplotlib.pyplot as plt
 import networkx as nx
 
 from deap.gp import graph as gph
-from deap.gp import PrimitiveTree
 from deap.tools import Logbook
 
 
 def eaNigel(population, toolbox, goal, ngen, stats=None,
-             halloffame=None, verbose=__debug__):
+             halloffame=None, history=None, verbose=__debug__):
     """This algorithm is a simple evolutionary algorithm.
 
     :param population: A list of individuals.
@@ -39,6 +37,9 @@ def eaNigel(population, toolbox, goal, ngen, stats=None,
     if halloffame is not None:
         halloffame.update(population)
 
+    if history is not None:
+        history.update(population)
+
     record = stats.compile(population) if stats else {}
     logbook.record(gen=0, nevals=len(invalid_ind), **record)
 
@@ -48,12 +49,15 @@ def eaNigel(population, toolbox, goal, ngen, stats=None,
         # Select the next generation individuals
         offspring = toolbox.procreate(population)
 
-        # Update the hall of fame with the generated individuals
-        if halloffame is not None:
-            halloffame.update(offspring)
-
         # Replace the current population by the offspring
         population[:] = offspring
+
+        # Update the hall of fame with the generated individuals
+        if halloffame is not None:
+            halloffame.update(population)
+
+        if history is not None:
+            history.update(population)
 
         # Append the current generation statistics to the logbook
         record = stats.compile(population) if stats else {}
@@ -77,7 +81,7 @@ def procreate(pop, toolbox):
             baby = toolbox.clone(ind)
         elif action == 2:
             dad, mum = toolbox.select(pop, 2)
-            baby = toolbox.mate(dad, mum)
+            baby = toolbox.mate(dad, mum)[0]
         else:
             ind = toolbox.select(pop, 1)[0]
             baby = toolbox.mutate(ind)[0]
@@ -127,7 +131,7 @@ def cxPTreeGraft(receiver, contributor, Individual):
     contributed_slice = contributor.searchSubtree(contributor_node_idx)
     child[prune_slice] = contributor[contributed_slice]
 
-    return Individual(child)
+    return Individual(child),
 
 
 class DeadBranchError(Exception):
