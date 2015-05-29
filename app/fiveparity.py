@@ -37,12 +37,18 @@ for i in range(PARITY_SIZE_M):
     outputs[i] = parity
 
 pset = PrimitiveSet("MAIN", PARITY_FANIN_M, "IN")
-pset.addPrimitive(operator.and_, 2)
-pset.addPrimitive(operator.or_, 2)
-pset.addPrimitive(operator.xor, 2)
-pset.addPrimitive(operator.not_, 1)
-#pset.addTerminal(1)
-#pset.addTerminal(0)
+
+def nor(a,b):
+    return not(a or b)
+
+pset.addPrimitive(nor, 2)
+
+# pset.addPrimitive(operator.and_, 2)
+# pset.addPrimitive(operator.or_, 2)
+# pset.addPrimitive(operator.xor, 2)
+# pset.addPrimitive(operator.not_, 1)
+# pset.addTerminal(1)
+# pset.addTerminal(0)
 
 creator.create("FitnessMax", base.Fitness, weights=(-1.0,))
 creator.create("Individual", PrimitiveTree, fitness=creator.FitnessMax)
@@ -57,7 +63,8 @@ toolbox.register("compile", compile, pset=pset)
 def evalParity(individual):
     func = toolbox.compile(expr=individual)
     score = sum(func(*in_) == out for in_, out in zip(inputs, outputs))
-    score = max(0, PARITY_SIZE_M - score)
+    nodes = len(individual)
+    score = max(0, PARITY_SIZE_M - score + nodes * 0.001)
     return score,
 
 
@@ -79,7 +86,7 @@ def main():
     stats.register("min", numpy.min)
     stats.register("max", numpy.max)
 
-    eaNigel(pop, toolbox, 150, stats=stats, halloffame=hof)
+    eaNigel(pop, toolbox, 400, stats=stats, halloffame=hof)
 
     return pop, stats, hof
 

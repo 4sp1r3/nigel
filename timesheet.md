@@ -1,5 +1,19 @@
 # Timesheet
 
+## May 29 (2hrs+)
+
+* remould the fiveparity problem to work with our selection/minimisation scoring
+* push it up and run through with Nigel
+* try again using just NOR gates - only one primitive
+* try again adding a number of nodes penalty to the scoring routine
+* leave a run of nor's, without adf, in the fiveparity notebook.
+
+## May 28 (2hrs)
+
+* implemented the parity problem
+* adapt the stock parity problem to use our methods
+
+
 ## May 22 - May 27
 
 * the great hard drive crash of 2015
