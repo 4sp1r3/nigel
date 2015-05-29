@@ -8,7 +8,8 @@ from deap.gp import graph as gph
 from deap.tools import Logbook
 
 
-def eaNigel(population, toolbox, goal, ngen, stats=None,
+
+def eaNigel(population, toolbox, ngen, goal=0, stats=None,
              halloffame=None, history=None, verbose=__debug__):
     """This algorithm is a simple evolutionary algorithm.
 
@@ -16,6 +17,7 @@ def eaNigel(population, toolbox, goal, ngen, stats=None,
     :param toolbox: A :class:`~deap.base.Toolbox` that contains the evolution
                     operators.
     :param ngen: The number of generation.
+    :param goal: Stop looking if the best score in the halloffame is less than this value
     :param stats: A :class:`~deap.tools.Statistics` object that is updated
                   inplace, optional.
     :param halloffame: A :class:`~deap.tools.HallOfFame` object that will
@@ -80,8 +82,14 @@ def procreate(pop, toolbox):
             ind = toolbox.select(pop, 1)[0]
             baby = toolbox.clone(ind)
         elif action == 2:
-            dad, mum = toolbox.select(pop, 2)
-            baby = toolbox.mate(dad, mum)[0]
+            for attempt in range(5):
+                try:
+                    dad, mum = toolbox.select(pop, 2)
+                    baby = toolbox.mate(dad, mum)[0]
+                    break
+                except:
+                    continue
+                raise Exception("Couldn't find a mate")
         else:
             ind = toolbox.select(pop, 1)[0]
             baby = toolbox.mutate(ind)[0]
