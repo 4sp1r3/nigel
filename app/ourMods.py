@@ -8,7 +8,6 @@ from deap.gp import graph as gph
 from deap.tools import Logbook
 
 
-
 def eaNigel(population, toolbox, ngen, goal=0, stats=None,
              halloffame=None, history=None, verbose=__debug__):
     """This algorithm is a simple evolutionary algorithm.
@@ -57,6 +56,7 @@ def eaNigel(population, toolbox, ngen, goal=0, stats=None,
         # Update the hall of fame with the generated individuals
         if halloffame is not None:
             halloffame.update(population)
+#            population[-1] = halloffame[0]  # always include the best ever in the offspring
 
         if history is not None:
             history.update(population)

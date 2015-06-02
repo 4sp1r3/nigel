@@ -1,5 +1,18 @@
 # Timesheet
 
+## Tue Jun 2 (...)
+
+* ADF's I think I've got it compiling the trees/prims now.  I suspect there is an error in the docs for compileADF
+  (it says the main pset should be last, but things finally started working for me when I put it first!?)
+* now I just need to work out how to mate/crossover etc.
+
+
+## Mon Jun 1 (3hrs)
+
+* ADFs! Loooong look over the deap support for adfs. It makes sense and is just different enough to Kosa to be
+  a real pain deciding how to tackle.
+* ok, found an old deap adf example to try and work from. trying it for the parity problem
+
 ## May 29 (2hrs+)
 
 * remould the fiveparity problem to work with our selection/minimisation scoring
