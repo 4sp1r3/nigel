@@ -12,7 +12,7 @@ from deap import base
 from deap import creator
 from deap import tools
 from deap.gp import PrimitiveTree, compile, mutUniform, PrimitiveSet
-from app.ourMods import genGrow, cxPTreeGraft, selProbablistic, eaNigel, procreate
+from ourMods import genGrow, cxPTreeGraft, selProbablistic, eaNigel, procreate
 
 # Initialize Parity problem input and output matrices
 PARITY_FANIN_M = 5

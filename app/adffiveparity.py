@@ -1,6 +1,9 @@
 # An attempt to do the parity problem with our modifications (Kosa).
 # Modified to use an ADF.
 
+GENERATIONS = 5
+POP_SIZE = 300
+
 import random
 import operator
 
@@ -10,7 +13,7 @@ from deap import base
 from deap import creator
 from deap import tools
 from deap.gp import PrimitiveTree, compileADF, mutUniform, PrimitiveSet
-from ourMods import genGrow, cxPTreeGraft, selProbablistic, eaNigel, procreate
+from app.ourMods import genGrow, cxPTreeGraft, selProbablistic
 
 """
 ### Training data: inputs and outputs
@@ -44,7 +47,7 @@ def nor(a,b):
     return not(a or b)
 
 # the adf takes two inputs and has just the one primitive
-adfpset = PrimitiveSet("ADF", 2, "ARG")
+adfpset = PrimitiveSet("ADF0", 2, "ARG")
 adfpset.addPrimitive(nor, 2)
 
 # the main pset is the same, plus the adf
@@ -77,11 +80,10 @@ toolbox.register("individual", tools.initCycle, creator.Individual, [toolbox.MAI
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("compile", compileADF, psets=[pset, adfpset])
 
-# TODO: what happens here? do i need to compileADF then some or what?!
 def evalParity(individual):
     func = toolbox.compile(expr=individual)
     score = sum(func(*in_) == out for in_, out in zip(inputs, outputs))
-    nodes = len(individual)
+    nodes = len(individual[0]) + len(individual[1])
     score = max(0, PARITY_SIZE_M - score + nodes * 0.001)
     return score,
 
@@ -89,34 +91,71 @@ toolbox.register("evaluate", evalParity)
 
 # TODO: and so how does it crossbreed?!
 toolbox.register("select", selProbablistic)
-toolbox.register("mate", cxPTreeGraft, Individual=creator.Individual)
+toolbox.register("mate", cxPTreeGraft)
 toolbox.register("expr_mut", genGrow, max_=3)
 toolbox.register("mutate", mutUniform, expr=toolbox.expr_mut, pset=pset)
-toolbox.register("procreate", procreate, toolbox=toolbox)
 
 
-def main():
+def main(pop_size=POP_SIZE, gens=GENERATIONS):
     #random.seed(21)
-    pop = toolbox.population(n=300)
+    pop = toolbox.population(n=pop_size)
     hof = tools.HallOfFame(2)
+
     stats = tools.Statistics(lambda ind: ind.fitness.values)
     stats.register("avg", numpy.mean)
     stats.register("std", numpy.std)
     stats.register("min", numpy.min)
     stats.register("max", numpy.max)
 
-    eaNigel(pop, toolbox, 400, stats=stats, halloffame=hof)
+    logbook = tools.Logbook()
+    logbook.header = ['gen'] + stats.fields
+
+    def log(gen):
+        # write a generation to the log
+        for ind in pop:
+            ind.fitness.values = toolbox.evaluate(ind)
+        logbook.record(gen=gen, **stats.compile(pop))
+        hof.update(pop)
+
+        print(logbook.stream)
+        gen += 1
+
+    # Generational loop
+    for gen in range(gens):
+        log(gen)
+        if hof[0].fitness.values[0] < 0.030:
+            break
+        offspring = []
+        for idx in range(len(pop)):
+            action = random.choice(('clone', 'mate', 'mutate'))
+
+            if action == 'clone':
+                ind = toolbox.select(pop, 1)
+                child = toolbox.clone(ind)
+
+            if action == 'mate':
+                receiver, contributor = toolbox.select(pop, 2)
+                child = toolbox.clone(receiver)
+                subtree = random.choice((0, 1))
+                if subtree == 0:
+                    creator.MAIN(toolbox.mate(receiver[subtree], contributor[subtree]))
+                else:
+                    creator.ADF(toolbox.mate(receiver[subtree], contributor[subtree]))
+
+            if action == 'mutate':
+                ind = toolbox.select(pop, 1)
+                child = toolbox.clone(ind)
+                section = random.choice(('ADF', 'MAIN'))
+                if section == 'MAIN':
+                    child[0] = toolbox.mutate(ind[0], pset=pset)[0]
+                else:
+                    child[1] = toolbox.mutate(ind[1], pset=adfpset)[0]
+            offspring.append(child)
+        pop[:] = offspring
+    log(gen+1)
 
     return pop, stats, hof
 
 if __name__ == "__main__":
     pop, stats, hof = main()
     print(hof)
-
-
-# pset.addPrimitive(operator.and_, 2)
-# pset.addPrimitive(operator.or_, 2)
-# pset.addPrimitive(operator.xor, 2)
-# pset.addPrimitive(operator.not_, 1)
-# pset.addTerminal(1)
-# pset.addTerminal(0)
