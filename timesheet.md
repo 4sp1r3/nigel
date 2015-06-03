@@ -1,6 +1,17 @@
 # Timesheet
 
-## Tue Jun 2 (...)
+## Wed Jun 3 (9hrs)
+
+* We'll crossover like with like, so if the contributing node is in the Result Producing Branch then that is where it
+   will go in the receiver, likewise with if the node is from inside an ADF.  So I'll create a crossover routine
+   to consume ADF inclusive individuals which, in turn, calls the current crossover with appropriate inputs. Try that.
+* Keeping the same procreation of clone, crossover, or mutate each individual-at the highest level
+* removed restriction on crossovers-now they can replace the receiver from the root down (ie: replace the receiver completely)
+* phew, we have a single adf going for the five parity prob. Now setting up a playbook/visualisations.
+* pita, but we have drawings of adf based trees (had to go back to primitives)
+* saved a notebook with 350gens/500pop/1adf = solved 130nodes
+
+## Tue Jun 2 (4hrs)
 
 * ADF's I think I've got it compiling the trees/prims now.  I suspect there is an error in the docs for compileADF
   (it says the main pset should be last, but things finally started working for me when I put it first!?)
