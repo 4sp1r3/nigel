@@ -5,8 +5,6 @@ GENERATIONS = 5
 POP_SIZE = 300
 
 import random
-import operator
-
 import numpy
 
 from deap import base
@@ -45,15 +43,25 @@ for i in range(PARITY_SIZE_M):
 # you can build anything you need from this one primitive
 def nor(a,b):
     return not(a or b)
+primitives = [(nor, 2)]
 
-# the adf takes two inputs and has just the one primitive
-adfpset = PrimitiveSet("ADF0", 2, "ARG")
-adfpset.addPrimitive(nor, 2)
+def get_pset(primitives, name, arity, prefix='ARG'):
+    """returns a new PrimitiveSet"""
+    pset = PrimitiveSet(name, arity, prefix)
+    for func, arity in primitives:
+        pset.addPrimitive(func, arity)
+    return pset
+
+# adf0 takes two inputs
+adf0pset = get_pset(primitives, 'ADF0', 2)
+
+# adf1 takes two inputs
+adf1pset = get_pset(primitives, 'ADF1', 2)
 
 # the main pset is the same, plus the adf
-pset = PrimitiveSet("MAIN", PARITY_FANIN_M, "IN")
-pset.addPrimitive(nor, 2)
-pset.addADF(adfpset)
+pset = get_pset(primitives, "MAIN", PARITY_FANIN_M, "IN")
+pset.addADF(adf0pset)
+pset.addADF(adf1pset)
 
 
 """
@@ -62,23 +70,27 @@ pset.addADF(adfpset)
 # An Individual comprises two trees: the ADF and the Main program and seeks the lowest fitness score
 creator.create("FitnessMax", base.Fitness, weights=(-1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMax)
-creator.create("ADF", PrimitiveTree, pset=adfpset)
+creator.create("ADF0", PrimitiveTree, pset=adf0pset)
+creator.create("ADF1", PrimitiveTree, pset=adf1pset)
 creator.create("MAIN", PrimitiveTree, pset=pset)
 toolbox = base.Toolbox()
 
 # The ADF is grown up to 5 levels deep
-toolbox.register("adf_expr", genGrow, pset=adfpset, max_=5)
-toolbox.register("ADF", tools.initIterate, creator.ADF, toolbox.adf_expr)
+toolbox.register("adf0_expr", genGrow, pset=adf0pset, max_=5)
+toolbox.register("ADF0", tools.initIterate, creator.ADF0, toolbox.adf0_expr)
+# The ADF is grown up to 5 levels deep
+toolbox.register("adf1_expr", genGrow, pset=adf1pset, max_=5)
+toolbox.register("ADF1", tools.initIterate, creator.ADF1, toolbox.adf1_expr)
 
 # the program is also grown up to 5 levels deep
 toolbox.register("main_expr", genGrow, pset=pset, max_=5)
 toolbox.register("MAIN", tools.initIterate, creator.MAIN, toolbox.main_expr)
-toolbox.register("individual", tools.initCycle, creator.Individual, [toolbox.MAIN, toolbox.ADF])
+toolbox.register("individual", tools.initCycle, creator.Individual, [toolbox.MAIN, toolbox.ADF1, toolbox.ADF0])
 
 # the population is a list of individuals and (hopefully) the default compile routine knows what to do
 # with the adfs
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-toolbox.register("compile", compileADF, psets=[pset, adfpset])
+toolbox.register("compile", compileADF, psets=[pset, adf0pset, adf1pset])
 
 def evalParity(individual):
     func = toolbox.compile(expr=individual)
@@ -134,20 +146,24 @@ def main(pop_size=POP_SIZE, gens=GENERATIONS):
             if action == 'mate':
                 receiver, contributor = toolbox.select(pop, 2)
                 child = toolbox.clone(receiver)
-                subtree = random.choice((0, 1))
+                subtree = random.choice((0, 1, 2))
                 if subtree == 0:
                     creator.MAIN(toolbox.mate(receiver[subtree], contributor[subtree]))
+                elif subtree == 1:
+                    creator.ADF1(toolbox.mate(receiver[subtree], contributor[subtree]))
                 else:
-                    creator.ADF(toolbox.mate(receiver[subtree], contributor[subtree]))
+                    creator.ADF0(toolbox.mate(receiver[subtree], contributor[subtree]))
 
             if action == 'mutate':
                 ind = toolbox.select(pop, 1)
                 child = toolbox.clone(ind)
-                section = random.choice(('ADF', 'MAIN'))
+                section = random.choice(('ADF1', 'ADF0', 'MAIN'))
                 if section == 'MAIN':
                     child[0] = toolbox.mutate(ind[0], pset=pset)[0]
+                elif section == 'ADF1':
+                    child[1] = toolbox.mutate(ind[1], pset=adf1pset)[0]
                 else:
-                    child[1] = toolbox.mutate(ind[1], pset=adfpset)[0]
+                    child[2] = toolbox.mutate(ind[2], pset=adf0pset)[0]
             offspring.append(child)
         pop[:] = offspring
     log(gen+1)

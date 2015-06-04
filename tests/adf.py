@@ -11,3 +11,13 @@ class ADFFiveParityTestCase(unittest.TestCase):
 
         from app.ourMods import adfdraw
         adfdraw(hof[0])
+
+    def test_two(self):
+        from app.madffiveparity import main
+
+        pop, stats, hof = main(gens=5, pop_size=30)
+        print(hof)
+
+        from app.ourMods import adfdraw
+
+        adfdraw(hof[0])

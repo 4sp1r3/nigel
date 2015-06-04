@@ -270,8 +270,8 @@ def adfdraw(individual):
     """
     Draws a node tree of an adf individual
     """
-    PROGN, ADF0, RPB = 'PROGN', 'ADF0', 'RPB'
-    expr = [PROGN, ADF0] + individual[1] + [RPB] + individual[0]
+    PROGN, ADF0, ADF1, RPB = 'PROGN', 'ADF0', 'ADF1', 'RPB'
+    expr = [PROGN, ADF0] + individual[1] + ['ADF1'] + individual[2] + [RPB] + individual[0]
     nodes = list(range(len(expr)))
     edges = list()
     labels = dict()
@@ -290,8 +290,8 @@ def adfdraw(individual):
         if hasattr(node, 'arity'):
             stack.append([i, node.arity])
         elif node == PROGN:
-            stack.append([i, 2])
-        elif node == ADF0:
+            stack.append([i, 3])
+        elif node == ADF0 or node == ADF1:
             stack.append([i, 1])
         elif node == RPB:
             stack.append([i, 1])
