@@ -150,7 +150,7 @@ class DeadBranchError(Exception):
     pass
 
 
-def genGrow(pset, max_, type_=None, prob=0.2):
+def genGrow(pset, max_, type_=None, prob=0.3):
     """Generate an expression tree.
     Branches can be of any height, provided they are not more than *max*.
 

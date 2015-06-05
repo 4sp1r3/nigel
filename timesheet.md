@@ -1,5 +1,26 @@
 # Timesheet
 
+## Fri Jun 5 (7hrs)
+
+* still hacking away trying to inject Kosa style ADF's into DEAP. Calling it "KosaTree" :-) for now.
+* ok, managed to de-deap the whole initialisation process and population instantiation, so it now looks
+     like regular old object-oriented and functional python programming.  Now I just need to create a 
+     KosaTree, abstract the creation of adfs to a function call, and tackle the graphing again to show
+     arbitrary KosaTrees. Gee, that's all '-P
+* nup. To get to dynamic numbers of adfs within each individual they'll need to handle their own primitive sets;
+     more specifically knowing which adfs it has in order to do a crossover; which, in turn, means I need to
+     migrate the rest of the deap toolbox stuff into the internals of each individual.
+
+## Thu Jun 4 (5hrs)
+
+* talk to nige, working toward multiple adfs
+* 2 indepedent ADFs of 2 args, drawn.
+* No joy getting one ADF to use another; deap wouldn't compile them and it looks like a rabbit hole to resolve.
+* struggled to balance adding ADF functionality against retaining deap's valuable bits, lots of thinking
+   and puzzling out how deap is contructed and where to cut in and start doing our ADF thing. Toyed with
+   another module, but too risky, resolved to a chip-away approach, cycling over tiny incremental changes
+   to approach the whole.
+
 ## Wed Jun 3 (9hrs)
 
 * We'll crossover like with like, so if the contributing node is in the Result Producing Branch then that is where it

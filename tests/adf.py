@@ -20,4 +20,5 @@ class ADFFiveParityTestCase(unittest.TestCase):
 
         from app.ourMods import adfdraw
 
-        adfdraw(hof[0])
+        for ind in hof:
+            adfdraw(ind)
