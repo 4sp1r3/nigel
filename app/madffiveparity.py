@@ -5,7 +5,9 @@ GENERATIONS = 5
 POP_SIZE = 300
 
 import random
+import copy
 import numpy
+from functools import partial
 
 from deap import base
 from deap import tools
@@ -76,36 +78,45 @@ class Individual(list):
         super(Individual, self).__init__(branches)
         self.fitness = FitnessMin()
 
+    def evaluate(self):
+        func = compileADF(self, [pset, adf0pset, adf1pset])
+        score = sum(func(*in_) == out for in_, out in zip(inputs, outputs))
+        nodes = len(self[0]) + len(self[1]) + len(self[2])
+        score = max(0, PARITY_SIZE_M - score + nodes * 0.001)
+        return score,
 
-def tool_compile(expr):
-    return compileADF(expr, [pset, adf0pset, adf1pset])
+    def clone(self):
+        return copy.deepcopy(self)
 
-def population(n):
-    return [Individual() for _ in range(n)]
+    def mutate(self):
+        section = random.choice(('ADF1', 'ADF0', 'MAIN'))
+        mut_expr = partial(genGrow, max_=3)
+        if section == 'MAIN':
+            self[0] = mutUniform(self[0], expr=mut_expr, pset=pset)[0]
+        elif section == 'ADF1':
+            self[1] = mutUniform(self[1], expr=mut_expr, pset=adf1pset)[0]
+        else:
+            self[2] = mutUniform(self[2], expr=mut_expr, pset=adf0pset)[0]
+
+    def mate(self, contributor):
+        subtree = random.choice((0, 1, 2))
+        self[subtree] = PrimitiveTree(cxPTreeGraft(self[subtree], contributor[subtree]))
+
+
+class Population(list):
+    def __init__(self, ind, n):
+        super(Population, self).__init__([ind() for _ in range(n)])
+
+    def select(self, n):
+        return selProbablistic(self, n)
 
 
 """
 ### Data Structures
 """
-
-def evalParity(individual):
-    func = tool_compile(expr=individual)
-    score = sum(func(*in_) == out for in_, out in zip(inputs, outputs))
-    nodes = len(individual[0]) + len(individual[1])
-    score = max(0, PARITY_SIZE_M - score + nodes * 0.001)
-    return score,
-
-toolbox = base.Toolbox()
-toolbox.register("evaluate", evalParity)
-toolbox.register("select", selProbablistic)
-toolbox.register("mate", cxPTreeGraft)
-toolbox.register("expr_mut", genGrow, max_=3)
-toolbox.register("mutate", mutUniform, expr=toolbox.expr_mut, pset=pset)
-
-
 def main(pop_size=POP_SIZE, gens=GENERATIONS):
     #random.seed(21)
-    pop = population(n=pop_size)
+    pop = Population(Individual, pop_size)
     hof = tools.HallOfFame(2)
 
     stats = tools.Statistics(lambda ind: ind.fitness.values)
@@ -120,7 +131,7 @@ def main(pop_size=POP_SIZE, gens=GENERATIONS):
     def log(gen):
         # write a generation to the log
         for ind in pop:
-            ind.fitness.values = toolbox.evaluate(ind)
+            ind.fitness.values = ind.evaluate()
         logbook.record(gen=gen, **stats.compile(pop))
         hof.update(pop)
 
@@ -137,25 +148,18 @@ def main(pop_size=POP_SIZE, gens=GENERATIONS):
             action = random.choice(('clone', 'mate', 'mutate'))
 
             if action == 'clone':
-                ind = toolbox.select(pop, 1)
-                child = toolbox.clone(ind)
+                ind = pop.select(1)
+                child = ind.clone()
 
             if action == 'mate':
-                receiver, contributor = toolbox.select(pop, 2)
-                child = toolbox.clone(receiver)
-                subtree = random.choice((0, 1, 2))
-                child[subtree] = PrimitiveTree(toolbox.mate(receiver[subtree], contributor[subtree]))
+                receiver, contributor = pop.select(2)
+                child = receiver.clone()
+                child.mate(contributor)
 
             if action == 'mutate':
-                ind = toolbox.select(pop, 1)
-                child = toolbox.clone(ind)
-                section = random.choice(('ADF1', 'ADF0', 'MAIN'))
-                if section == 'MAIN':
-                    child[0] = toolbox.mutate(ind[0], pset=pset)[0]
-                elif section == 'ADF1':
-                    child[1] = toolbox.mutate(ind[1], pset=adf1pset)[0]
-                else:
-                    child[2] = toolbox.mutate(ind[2], pset=adf0pset)[0]
+                ind = pop.select(1)
+                child = ind.clone()
+                child.mutate()
 
             offspring.append(child)
         pop[:] = offspring
