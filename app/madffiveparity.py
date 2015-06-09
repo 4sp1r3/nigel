@@ -86,7 +86,15 @@ class Individual(list):
         # todo: adfs that call each other
         func = compileADF(self, self.psets)
         score = sum(func(*in_) == out for in_, out in zip(inputs, outputs))
-        nodes = len(self[0]) + len(self[1]) + len(self[2])
+
+        # accumulate the number of nodes actually used during a run by calling the adfs in the rpb
+        nodes = 0
+        for node in self[0]:
+            if node.name[:3] != 'ADF':
+                nodes += 1
+            else:
+                nodes += len(self[int(node.name[3])])
+
         score = max(0, PARITY_SIZE_M - score + nodes * 0.001)
         return score,
 
