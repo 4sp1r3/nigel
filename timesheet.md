@@ -1,5 +1,17 @@
 # Timesheet
 
+## Tues Jun 9 (6hrs)
+
+* dynamic numbers of adfs finally
+* drawing dynamic numbers of adfs
+* mating across adfs (but not rpb's yet)
+* score by number of nodes called during a run (rather than just count of nodes total)
+
+## Sat Jun 6 (2hrs)
+
+* did the last of the refactoring to remove the deap toolbox in favour of regular python. still 2 adfs,
+    and should be clear path now to implement dynamic adfs.
+
 ## Fri Jun 5 (7hrs)
 
 * still hacking away trying to inject Kosa style ADF's into DEAP. Calling it "KosaTree" :-) for now.

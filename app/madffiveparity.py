@@ -3,6 +3,7 @@
 
 GENERATIONS = 5
 POP_SIZE = 300
+ADF_RANGE = range(0, 5)
 
 import random
 import copy
@@ -46,19 +47,13 @@ def nor(a,b):
     return not(a or b)
 primitives = [(nor, 2)]
 
+
 def get_pset(primitives, name, arity, prefix='ARG'):
     """returns a new PrimitiveSet"""
     pset = PrimitiveSet(name, arity, prefix)
     for func, arity in primitives:
         pset.addPrimitive(func, arity)
     return pset
-
-
-adf0pset = get_pset(primitives, 'ADF0', 2)
-adf1pset = get_pset(primitives, 'ADF1', 2)
-pset = get_pset(primitives, "MAIN", PARITY_FANIN_M, "IN")
-pset.addADF(adf0pset)
-pset.addADF(adf1pset)
 
 
 class FitnessMin(base.Fitness):
@@ -69,17 +64,27 @@ class Individual(list):
     """
     An Individual with a number of ADF's and an RPB
     """
-    def __init__(self, *args, **kwargs):
-        branches = [
-            PrimitiveTree(genGrow(pset, 5)),
-            PrimitiveTree(genGrow(adf1pset, 5)),
-            PrimitiveTree(genGrow(adf0pset, 5))
-        ]
-        super(Individual, self).__init__(branches)
+    def __init__(self):
+        # The Result Producing Branch
+        pset = get_pset(primitives, "MAIN", PARITY_FANIN_M, "IN")
+        self.psets = [pset]
+        self.branches = []
+
+        # A number of Automatically Defined Functions
+        adf_count = random.choice(ADF_RANGE)
+        for adf_num in range(adf_count):
+            adfset = get_pset(primitives, 'ADF%s' % adf_num, 2)     # todo: dynamic number of arguments
+            pset.addADF(adfset)
+            self.psets.append(adfset)
+            self.branches.append(PrimitiveTree(genGrow(adfset, 5)))
+        self.branches.insert(0, PrimitiveTree(genGrow(pset, 5)))
+
+        super(Individual, self).__init__(self.branches)
         self.fitness = FitnessMin()
 
     def evaluate(self):
-        func = compileADF(self, [pset, adf0pset, adf1pset])
+        # todo: adfs that call each other
+        func = compileADF(self, self.psets)
         score = sum(func(*in_) == out for in_, out in zip(inputs, outputs))
         nodes = len(self[0]) + len(self[1]) + len(self[2])
         score = max(0, PARITY_SIZE_M - score + nodes * 0.001)
@@ -89,18 +94,16 @@ class Individual(list):
         return copy.deepcopy(self)
 
     def mutate(self):
-        section = random.choice(('ADF1', 'ADF0', 'MAIN'))
         mut_expr = partial(genGrow, max_=3)
-        if section == 'MAIN':
-            self[0] = mutUniform(self[0], expr=mut_expr, pset=pset)[0]
-        elif section == 'ADF1':
-            self[1] = mutUniform(self[1], expr=mut_expr, pset=adf1pset)[0]
-        else:
-            self[2] = mutUniform(self[2], expr=mut_expr, pset=adf0pset)[0]
+        branch = random.choice(range(len(self)))
+        self[branch] = mutUniform(self[branch], expr=mut_expr, pset=self.psets[branch])[0]
 
     def mate(self, contributor):
-        subtree = random.choice((0, 1, 2))
-        self[subtree] = PrimitiveTree(cxPTreeGraft(self[subtree], contributor[subtree]))
+        #todo: add mating between rpb and adfs
+        if len(self) > 1 and len(contributor) > 1:
+            branch_c = random.choice(range(1, len(contributor)))
+            branch_r = random.choice(range(1, len(self)))
+            self[branch_r] = PrimitiveTree(cxPTreeGraft(self[branch_r], contributor[branch_c]))
 
 
 class Population(list):
@@ -141,7 +144,7 @@ def main(pop_size=POP_SIZE, gens=GENERATIONS):
     # Generational loop
     for gen in range(gens):
         log(gen)
-        if hof[0].fitness.values[0] < 0.030:
+        if hof[0].fitness.values[0] < 0.100:
             break
         offspring = []
         for idx in range(len(pop)):

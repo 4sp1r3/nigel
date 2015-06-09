@@ -15,10 +15,11 @@ class ADFFiveParityTestCase(unittest.TestCase):
     def test_two(self):
         from app.madffiveparity import main
 
-        pop, stats, hof = main(gens=5, pop_size=30)
+        pop, stats, hof = main(gens=500, pop_size=300)
         print(hof)
 
         from app.ourMods import adfdraw
 
         for ind in hof:
+            print(ind.fitness)
             adfdraw(ind)

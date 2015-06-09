@@ -270,8 +270,11 @@ def adfdraw(individual):
     """
     Draws a node tree of an adf individual
     """
-    PROGN, ADF0, ADF1, RPB = 'PROGN', 'ADF0', 'ADF1', 'RPB'
-    expr = [PROGN, ADF0] + individual[1] + ['ADF1'] + individual[2] + [RPB] + individual[0]
+    PROGN = 'PROGN'
+    expr = []
+    for num, branch in enumerate(individual[1:]):
+        expr = expr + ['ADF%s' % num] + branch
+    expr += ['RPB'] + individual[0]
     nodes = list(range(len(expr)))
     edges = list()
     labels = dict()
@@ -281,20 +284,21 @@ def adfdraw(individual):
         if stack:
             edges.append((stack[-1][0], i))
             stack[-1][1] -= 1
+
         if isinstance(node, Primitive):
             labels[i] = node.name
         elif hasattr(node, 'value'):
             labels[i] = node.value
         else:
             labels[i] = str(node)
+
         if hasattr(node, 'arity'):
             stack.append([i, node.arity])
         elif node == PROGN:
-            stack.append([i, 3])
-        elif node == ADF0 or node == ADF1:
+            stack.append([i, len(individual)])
+        else:
             stack.append([i, 1])
-        elif node == RPB:
-            stack.append([i, 1])
+
         while stack and stack[-1][1] == 0:
             stack.pop()
 
@@ -303,7 +307,7 @@ def adfdraw(individual):
     graph.add_edges_from(edges)
     pos = nx.graphviz_layout(graph, prog="dot")
 
-    figsize = (25, max(individual[0].height, individual[1].height) + 2)
+    figsize = (25, max([i.height for i in individual]) + 2)
     plt.figure(figsize=figsize)
     nx.draw_networkx_nodes(graph, pos, node_size=900, node_color="w")
     nx.draw_networkx_edges(graph, pos)
