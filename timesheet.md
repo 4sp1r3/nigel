@@ -1,5 +1,42 @@
 # Timesheet
 
+## Tues Jun 14 ()
+
+
+
+## Mon Jun 13 (2hr, 2hr, 1hr, 3hr)
+
+* try to get some ast going. Found GreeTreeSnakes then a winding path lead to [Astor](https://github.com/berkerpeksag/astor)
+    had a play with that; seems it can convert code to ast and back.  Trying to work out how to apply it: rather than
+    a long rebuild of deap core, I'll have another go at just rebuilding the compile portion; but with ast. The idea
+    being that we still get all deap, but can remove the lambda obsfucation and thence call other ADFs.
+* contact with nigel - don't worry about pruning adfs that don't get used. push on with ast if that offers more
+    predictability wrt time
+* DOH! got through it - the deap code is calling adfs between themselves; matter of getting the psets lined up exactly,
+    oh, and removing the list reversal in their code.  I'm not a fan of the way they've done it, but if it works...
+* moving on to rewriting the mating (again) to accomodate adfs that are aware of other adfs.
+
+
+# Invoice #5 (hrs May 18 - June 13)
+
+## Fri Jun 12 (3+1+2=6)
+
+* tried to resimplify the problem back to using deap compile and compileADF. The debugger can't penetrate
+   the lambdas, but whilst it is simpler with just the KosaProgramTree (without KosaFunctionTree), I'm
+   increasingly convinced it can't handle the ADF's nesting inside one another, but can't nail it, because the
+   RPB can do one layer of nesting but the lambda's hide everything else.
+* painfully back to exploring AST's for a solution  
+ 
+## Thur Jun 11 (2hrs+2.5hrs+2.5hrs=7)
+
+* delving through how deap evaluates the adfs and trying to get it to play nice with variable psets.
+   This is as far a deap with carry us; their psets are very clear when it comes to subbranches/functions
+   I'm gonna have to create our own trees and functions and evaluations.  Now, it is kosatree time?
+* talk to nige about the critical program signature to retain
+* recreate an outline of the kosa class and run it
+* researching into ast (abstract syntax trees) which we might want to use very soon now
+* baaah, this is hard.  No matter what I do deap leads me back to insufferable `lambda` statements
+
 ## Tues Jun 9 (6hrs)
 
 * dynamic numbers of adfs finally

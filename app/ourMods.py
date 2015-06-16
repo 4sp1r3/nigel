@@ -272,9 +272,9 @@ def adfdraw(individual):
     """
     PROGN = 'PROGN'
     expr = []
-    for num, branch in enumerate(individual[1:]):
+    for num, branch in enumerate(individual[:-1]):
         expr = expr + ['ADF%s' % num] + branch
-    expr += ['RPB'] + individual[0]
+    expr += ['RPB'] + individual[-1]
     nodes = list(range(len(expr)))
     edges = list()
     labels = dict()

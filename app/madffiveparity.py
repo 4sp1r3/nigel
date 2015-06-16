@@ -62,22 +62,29 @@ class FitnessMin(base.Fitness):
 
 class Individual(list):
     """
-    An Individual with a number of ADF's and an RPB
+    An Individual with a number of ADF's and an RPB.
+    The RPB is last in the list. The ADFs preceed it in a hierarchy such that ADF0 uses only primitives,
+    ADF1 uses primitves and ADF0, ADF2 uses primitives plus ADF0 plus ADF1... the RPB uses all the ADFs.
     """
     def __init__(self):
-        # The Result Producing Branch
-        pset = get_pset(primitives, "MAIN", PARITY_FANIN_M, "IN")
-        self.psets = [pset]
+        self.psets = []
         self.branches = []
 
         # A number of Automatically Defined Functions
         adf_count = random.choice(ADF_RANGE)
         for adf_num in range(adf_count):
             adfset = get_pset(primitives, 'ADF%s' % adf_num, 2)     # todo: dynamic number of arguments
-            pset.addADF(adfset)
+            for subset in self.psets:
+                adfset.addADF(subset)
             self.psets.append(adfset)
             self.branches.append(PrimitiveTree(genGrow(adfset, 5)))
-        self.branches.insert(0, PrimitiveTree(genGrow(pset, 5)))
+
+        # The Result Producing Branch and pset
+        rpbset = get_pset(primitives, "MAIN", PARITY_FANIN_M, "IN")
+        for subset in self.psets:
+            rpbset.addADF(subset)
+        self.psets.append(rpbset)
+        self.branches.append(PrimitiveTree(genGrow(rpbset, 5)))
 
         super(Individual, self).__init__(self.branches)
         self.fitness = FitnessMin()
