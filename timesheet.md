@@ -1,8 +1,17 @@
 # Timesheet
 
-## Tues Jun 14 ()
+## Wed Jun 15 (3+3
 
+* rewrite the mating routines over and over until it actually works considering branches and psets nodetypes etc.
+* do lots of runs and watch it get worse results than ever; it's so focused on short nodecounts the popset gets
+    increasingly uniform and never makes any breakthrough to a lower score
+* rejig the evaluation scores.  First trying the deap weighting to no avail, then back to raw count of nodes,
+    now to raw score and an exponential scaling of the number of nodes
 
+## Tues Jun 14 (2+3)
+
+* added pset parameter to the cxPTreeGraft routine to ensure it only proposes a graft that has elements known
+    to the receiving branch and play around trying to get it to work without breaking backward compat
 
 ## Mon Jun 13 (2hr, 2hr, 1hr, 3hr)
 

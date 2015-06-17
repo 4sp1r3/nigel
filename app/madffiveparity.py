@@ -13,7 +13,7 @@ from functools import partial
 from deap import base
 from deap import tools
 from deap.gp import PrimitiveTree, compileADF, mutUniform, PrimitiveSet
-from app.ourMods import genGrow, cxPTreeGraft, selProbablistic
+from app.ourMods import genGrow, selProbablistic, adfdraw
 
 """
 ### Training data: inputs and outputs
@@ -96,13 +96,14 @@ class Individual(list):
 
         # accumulate the number of nodes actually used during a run by calling the adfs in the rpb
         nodes = 0
-        for node in self[0]:
+        for node in self[-1]:
             if node.name[:3] != 'ADF':
                 nodes += 1
             else:
                 nodes += len(self[int(node.name[3])])
 
-        score = max(0, PARITY_SIZE_M - score + nodes * 0.001)
+        score = max(0, PARITY_SIZE_M - score)
+        score = score + 1 + (-2 ** - (nodes / 250))
         return score,
 
     def clone(self):
@@ -114,11 +115,47 @@ class Individual(list):
         self[branch] = mutUniform(self[branch], expr=mut_expr, pset=self.psets[branch])[0]
 
     def mate(self, contributor):
-        #todo: add mating between rpb and adfs
-        if len(self) > 1 and len(contributor) > 1:
-            branch_c = random.choice(range(1, len(contributor)))
-            branch_r = random.choice(range(1, len(self)))
-            self[branch_r] = PrimitiveTree(cxPTreeGraft(self[branch_r], contributor[branch_c]))
+        """
+        Cut a compatible branch off the contributor and stick it somewhere here
+        """
+        # collect all possible receiving nodes
+        r_nodes = [(b, n) for b in range(len(self.branches)) for n in range(len(self.branches[b]))]
+        random.shuffle(r_nodes)
+
+        # collect all possible contributor nodes
+        c_nodes = [(b, n) for b in range(len(contributor.branches)) for n in range(len(contributor.branches[b]))]
+        random.shuffle(c_nodes)
+
+        def get_compatible_slice(nodetype, rpset):
+            """
+            returns a slice of the contributer which fits the receiving type and pset,
+            or None
+            """
+            for cbranch, cnode in c_nodes:
+
+                # reject types that don't match
+                if contributor[cbranch][cnode].ret != nodetype:
+                    continue
+
+                candidate_slice = contributor.branches[cbranch].searchSubtree(cnode)
+
+                # reject if the primitives in the contributing node are not known to the receiving branch
+                nodeset = set([n.name for n in contributor.branches[cbranch][candidate_slice]])
+                if not nodeset.issubset(set(rpset.mapping.keys())):
+                    continue
+
+                return (cbranch, candidate_slice)
+
+            # the receiving node is wholly incompatible with the contributor
+            return (None,None)
+
+        for rbranch, rnode in r_nodes:
+            cbranch, cslice = get_compatible_slice(self[rbranch][rnode].ret, self.psets[rbranch])
+            if cbranch is not None:
+                break
+
+        pruned_slice = self[rbranch].searchSubtree(rnode)
+        self[rbranch][pruned_slice] = contributor[cbranch][cslice]
 
 
 class Population(list):
@@ -159,7 +196,7 @@ def main(pop_size=POP_SIZE, gens=GENERATIONS):
     # Generational loop
     for gen in range(gens):
         log(gen)
-        if hof[0].fitness.values[0] < 0.100:
+        if hof[0].fitness.values[0] < 0.24:     # correct and less than 100 nodes visited
             break
         offspring = []
         for idx in range(len(pop)):
