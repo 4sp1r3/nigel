@@ -1,19 +1,32 @@
 # Timesheet
 
-## Wed Jun 15 (3+3
+## Thu Jun 18 (3+2)
+
+* working on grafting adfs with variable argument counts. done.
+* insert the score and function arity into the actual graph
+* do many runs for testing and experimentation.
+
+## Wed Jun 17 (3+3+2)
 
 * rewrite the mating routines over and over until it actually works considering branches and psets nodetypes etc.
 * do lots of runs and watch it get worse results than ever; it's so focused on short nodecounts the popset gets
     increasingly uniform and never makes any breakthrough to a lower score
 * rejig the evaluation scores.  First trying the deap weighting to no avail, then back to raw count of nodes,
     now to raw score and an exponential scaling of the number of nodes
+* attempt to implement dynamic argument counts within the ADFs
+* aah, if you change the arity of a function, you need to modify everywhere it gets used... hence preservation
+   of the 'signature' of the program; or crossovers are injecting twigs containing calls to functions with a
+   a different argument count to the current individual. 
+* So, as per Kosa, reject crossovers where the twig contains a call to an ADF with a different argument count 
+   (item 4 in his point-typing list).
 
-## Tues Jun 14 (2+3)
+
+## Tues Jun 16 (2+3)
 
 * added pset parameter to the cxPTreeGraft routine to ensure it only proposes a graft that has elements known
     to the receiving branch and play around trying to get it to work without breaking backward compat
 
-## Mon Jun 13 (2hr, 2hr, 1hr, 3hr)
+## Mon Jun 15 (2hr, 2hr, 1hr, 3hr)
 
 * try to get some ast going. Found GreeTreeSnakes then a winding path lead to [Astor](https://github.com/berkerpeksag/astor)
     had a play with that; seems it can convert code to ast and back.  Trying to work out how to apply it: rather than

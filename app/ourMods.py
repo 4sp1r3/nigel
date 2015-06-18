@@ -107,11 +107,12 @@ class GraftingError(Exception):
     pass
 
 
-def cxPTreeGraft(receiver, contributor):
+def cxPTreeGraft(receiver, contributor, pset=None):
     """Grafts a branch from the contributor onto the receiver.
 
     :param receiver: A PrimitiveTree which will receive a branch; the root is not changed
     :param contributor: An PrimitiveTree from which a branch will be copied
+    :param pset: A PrimitiveSet which all the contributed nodes must be within
     :returns: A new Individual with a branch of the contributor on the receiver, or an exception.
     """
     # find and randomly choose the type of node to graft at
@@ -134,7 +135,12 @@ def cxPTreeGraft(receiver, contributor):
     contributing_nodes = []
     for idx, node in enumerate(contributor):
         if node.ret is graft_type:
-            contributing_nodes.append(idx)
+            if pset is None:
+                contributing_nodes.append(idx)
+            else:
+                nodeset_names = set([n.name for n in contributor[contributor.searchSubtree(idx)]])
+                if nodeset_names.issubset(set(pset.mapping.keys())):
+                    contributing_nodes.append(idx)
     contributor_node_idx = random.choice(contributing_nodes)
 
     # graft the contributed slice onto a copy of the receiver
@@ -273,7 +279,7 @@ def adfdraw(individual):
     PROGN = 'PROGN'
     expr = []
     for num, branch in enumerate(individual[:-1]):
-        expr = expr + ['ADF%s' % num] + branch
+        expr = expr + ['F%s' % num] + branch
     expr += ['RPB'] + individual[-1]
     nodes = list(range(len(expr)))
     edges = list()
@@ -308,7 +314,9 @@ def adfdraw(individual):
     pos = nx.graphviz_layout(graph, prog="dot")
 
     figsize = (25, max([i.height for i in individual]) + 2)
-    plt.figure(figsize=figsize)
+    fig = plt.figure(figsize=figsize)
+    fig.suptitle("Score {:2.4f}".format(individual.fitness.values[0]), fontsize=16)
+    fig.text(0, 0, " \r\n ".join(["{} ({})".format(k, v.arity) for k, v in sorted(individual.psets[-1].mapping.items())]))
     nx.draw_networkx_nodes(graph, pos, node_size=900, node_color="w")
     nx.draw_networkx_edges(graph, pos)
     nx.draw_networkx_labels(graph, pos, labels)

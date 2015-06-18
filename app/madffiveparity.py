@@ -3,7 +3,9 @@
 
 GENERATIONS = 5
 POP_SIZE = 300
-ADF_RANGE = range(0, 5)
+ADF_RANGE = range(0, 4)
+ADF_ARGS_RANGE = range(1, 4)
+MAX_MATE_ATTEMPTS = 10
 
 import random
 import copy
@@ -48,7 +50,7 @@ def nor(a,b):
 primitives = [(nor, 2)]
 
 
-def get_pset(primitives, name, arity, prefix='ARG'):
+def get_pset(primitives, name, arity, prefix='A'):
     """returns a new PrimitiveSet"""
     pset = PrimitiveSet(name, arity, prefix)
     for func, arity in primitives:
@@ -66,6 +68,8 @@ class Individual(list):
     The RPB is last in the list. The ADFs preceed it in a hierarchy such that ADF0 uses only primitives,
     ADF1 uses primitves and ADF0, ADF2 uses primitives plus ADF0 plus ADF1... the RPB uses all the ADFs.
     """
+    class NoMateException(Exception): pass
+
     def __init__(self):
         self.psets = []
         self.branches = []
@@ -73,7 +77,7 @@ class Individual(list):
         # A number of Automatically Defined Functions
         adf_count = random.choice(ADF_RANGE)
         for adf_num in range(adf_count):
-            adfset = get_pset(primitives, 'ADF%s' % adf_num, 2)     # todo: dynamic number of arguments
+            adfset = get_pset(primitives, 'F%s' % adf_num, random.choice(ADF_ARGS_RANGE))
             for subset in self.psets:
                 adfset.addADF(subset)
             self.psets.append(adfset)
@@ -90,21 +94,29 @@ class Individual(list):
         self.fitness = FitnessMin()
 
     def evaluate(self):
-        # todo: adfs that call each other
         func = compileADF(self, self.psets)
-        score = sum(func(*in_) == out for in_, out in zip(inputs, outputs))
+        score = 0
+        try:
+            for in_, out in zip(inputs, outputs):
+                if func(*in_) == out:
+                    score += 1
+#            score = sum(func(*in_) == out for in_, out in zip(inputs, outputs))
+        except Exception as ex:
+            print(ex)
+            adfdraw(self)
+            raise ex
+        score = max(0, PARITY_SIZE_M - score)
 
         # accumulate the number of nodes actually used during a run by calling the adfs in the rpb
         nodes = 0
         for node in self[-1]:
-            if node.name[:3] != 'ADF':
+            if node.name[:1] != 'F':
                 nodes += 1
             else:
-                nodes += len(self[int(node.name[3])])
+                nodes += len(self[int(node.name[1])])
 
-        score = max(0, PARITY_SIZE_M - score)
-        score = score + 1 + (-2 ** - (nodes / 250))
-        return score,
+        modifier = 1 + (-2 ** - (nodes / 250))
+        return score + modifier,
 
     def clone(self):
         return copy.deepcopy(self)
@@ -126,33 +138,38 @@ class Individual(list):
         c_nodes = [(b, n) for b in range(len(contributor.branches)) for n in range(len(contributor.branches[b]))]
         random.shuffle(c_nodes)
 
-        def get_compatible_slice(nodetype, rpset):
+        def get_compatible_slice(rnode, rpset):
             """
             returns a slice of the contributer which fits the receiving type and pset,
             or None
             """
             for cbranch, cnode in c_nodes:
 
-                # reject types that don't match
-                if contributor[cbranch][cnode].ret != nodetype:
+                # reject swapping nodes that don't match
+                if contributor[cbranch][cnode] != rnode:
                     continue
 
+                # reject if adfs in contributed nodes have a different signature
                 candidate_slice = contributor.branches[cbranch].searchSubtree(cnode)
+                candidate_nodes = contributor.branches[cbranch][candidate_slice]
 
-                # reject if the primitives in the contributing node are not known to the receiving branch
-                nodeset = set([n.name for n in contributor.branches[cbranch][candidate_slice]])
-                if not nodeset.issubset(set(rpset.mapping.keys())):
+                # all the signatures match
+                try:
+                    if all([subnode == rpset.mapping[subnode.name] for subnode in candidate_nodes]):
+                        return (cbranch, candidate_slice)
+                except KeyError:
                     continue
-
-                return (cbranch, candidate_slice)
 
             # the receiving node is wholly incompatible with the contributor
             return (None,None)
 
         for rbranch, rnode in r_nodes:
-            cbranch, cslice = get_compatible_slice(self[rbranch][rnode].ret, self.psets[rbranch])
+            cbranch, cslice = get_compatible_slice(self[rbranch][rnode], self.psets[rbranch])
             if cbranch is not None:
                 break
+
+        if cbranch is None or cslice is None:
+            raise self.NoMateException()
 
         pruned_slice = self[rbranch].searchSubtree(rnode)
         self[rbranch][pruned_slice] = contributor[cbranch][cslice]
@@ -196,7 +213,7 @@ def main(pop_size=POP_SIZE, gens=GENERATIONS):
     # Generational loop
     for gen in range(gens):
         log(gen)
-        if hof[0].fitness.values[0] < 0.24:     # correct and less than 100 nodes visited
+        if hof[0].fitness.values[0] < 0.25:     # correct and less than ? nodes visited
             break
         offspring = []
         for idx in range(len(pop)):
@@ -207,9 +224,17 @@ def main(pop_size=POP_SIZE, gens=GENERATIONS):
                 child = ind.clone()
 
             if action == 'mate':
-                receiver, contributor = pop.select(2)
-                child = receiver.clone()
-                child.mate(contributor)
+                for _ in range(0, MAX_MATE_ATTEMPTS):
+                    try:
+                        receiver, contributor = pop.select(2)
+                        child = receiver.clone()
+                        child.mate(contributor)
+                        break
+                    except Individual.NoMateException:
+                        pass
+                else:
+                    child = pop.select(1)  # fallback to a clone if we can't successfully mate
+                    print("No mate after %s attempts." % MAX_MATE_ATTEMPTS)
 
             if action == 'mutate':
                 ind = pop.select(1)
