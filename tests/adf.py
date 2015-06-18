@@ -16,13 +16,8 @@ class ADFFiveParityTestCase(unittest.TestCase):
         from app.madffiveparity import main
         from app.ourMods import adfdraw
 
-        pop, stats, hof = main(gens=100, pop_size=400)
+        pop, stats, hof = main(gens=1, pop_size=400)
+        pop = sorted(pop, key=lambda i: i.fitness.values[0])
 
-        for ind in hof:
-            print(ind.fitness)
+        for ind in [hof[0], pop[0], pop[-1]]:
             adfdraw(ind)
-
-        # print(pop[0].fitness)
-        # adfdraw(pop[0])
-        # print(pop[-1].fitness)
-        # adfdraw(pop[-1])
