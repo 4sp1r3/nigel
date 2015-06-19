@@ -76,7 +76,8 @@ class Individual(list):
         self.branches = []
         self.signature = adf_signature
         self.grow_pb = growth[0] / 100
-        self.grow_max = growth[1]
+        self.grow_init = growth[1]
+        self.grow_mut = growth[2]
 
         # A number of Automatically Defined Functions
         for adf_num, nargs in enumerate(adf_signature):
@@ -84,14 +85,14 @@ class Individual(list):
             for subset in self.psets:
                 adfset.addADF(subset)
             self.psets.append(adfset)
-            self.branches.append(PrimitiveTree(genGrow(adfset, max_=self.grow_max, prob=self.grow_pb)))
+            self.branches.append(PrimitiveTree(genGrow(adfset, max_=self.grow_init, prob=self.grow_pb)))
 
         # The Result Producing Branch and pset
         rpbset = get_pset(primitives, "MAIN", PARITY_FANIN_M, "IN")
         for subset in self.psets:
             rpbset.addADF(subset)
         self.psets.append(rpbset)
-        self.branches.append(PrimitiveTree(genGrow(rpbset, max_=self.grow_max, prob=self.grow_pb)))
+        self.branches.append(PrimitiveTree(genGrow(rpbset, max_=self.grow_init, prob=self.grow_pb)))
 
         super(Individual, self).__init__(self.branches)
         self.fitness = FitnessMin()
@@ -126,7 +127,7 @@ class Individual(list):
         return copy.deepcopy(self)
 
     def mutate(self):
-        mut_expr = partial(genGrow, max_=self.grow_max, prob=self.grow_pb)
+        mut_expr = partial(genGrow, max_=self.grow_mut, prob=self.grow_pb)
         branch = random.choice(range(len(self)))
         self[branch] = mutUniform(self[branch], expr=mut_expr, pset=self.psets[branch])[0]
 
@@ -198,14 +199,14 @@ class Population(list):
 """
 ### Data Structures
 """
-def main(pop_size=100, gens=100, adf_range=(0,4), adf_nargs=(1,5), mmc=(80,18,2), best_of_class=5, growth=(30,5)):
+def main(pop_size=100, gens=100, adf_range=(0,4), adf_nargs=(1,5), mmc=(80,18,2), best_of_class=5, growth=(30,5,3)):
 
     mmc = (mmc[0]/sum(mmc), mmc[1]/sum(mmc), mmc[2]/sum(mmc))
     print("Running %s generations of %s indviduals with %s ADFs of %s arguments.\n"
           "The best %s are cloned, thence %s%% mate, %s%% mutate, and %s%% clone.\n"
-          "Tree growth has a %s%% probabilty being a terminal of up to %s deep per growth.\n" % (
+          "Tree growth has a %s%% probabilty being a terminal of up to %s deep on init, then %s deep on mutate.\n" % (
             gens, pop_size, adf_range, adf_nargs, best_of_class, 100*mmc[0], 100*mmc[1], 100*mmc[2],
-            growth[0], growth[1]))
+            growth[0], growth[1], growth[2]))
 
     pop = Population(Individual, pop_size, adf_range, adf_nargs, growth)
     hof = tools.HallOfFame(1)

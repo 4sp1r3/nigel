@@ -22,7 +22,7 @@ class ADFFiveParityTestCase(unittest.TestCase):
                                adf_nargs=(1,4),
                                mmc=(80,10,10),
                                best_of_class=20,
-                               growth=(30,4))
+                               growth=(30,5,3))
 
         pop = sorted(pop, key=lambda i: i.fitness.values[0])
         for ind in [pop[0], pop[-1]]:
