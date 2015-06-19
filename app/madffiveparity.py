@@ -202,10 +202,10 @@ class Population(list):
 def main(pop_size=100, gens=100, adf_range=(0,4), adf_nargs=(1,5), mmc=(80,18,2), best_of_class=5, growth=(30,5,3)):
 
     mmc = (mmc[0]/sum(mmc), mmc[1]/sum(mmc), mmc[2]/sum(mmc))
-    print("Running %s generations of %s indviduals with %s ADFs of %s arguments.\n"
+    print("Running %s generations of %s individuals with %s ADFs of %s arguments.\n"
           "The best %s are cloned, thence %s%% mate, %s%% mutate, and %s%% clone.\n"
           "Tree growth has a %s%% probabilty being a terminal of up to %s deep on init, then %s deep on mutate.\n" % (
-            gens, pop_size, adf_range, adf_nargs, best_of_class, 100*mmc[0], 100*mmc[1], 100*mmc[2],
+            gens, pop_size, adf_range, adf_nargs, best_of_class, int(100*mmc[0]), int(100*mmc[1]), int(100*mmc[2]),
             growth[0], growth[1], growth[2]))
 
     pop = Population(Individual, pop_size, adf_range, adf_nargs, growth)
