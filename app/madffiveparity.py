@@ -180,13 +180,13 @@ class Individual(list):
 
 
 class Population(list):
-    def __init__(self, ind, pop_size, adf_range, args_range):
+    def __init__(self, ind, pop_size, adf_range, adf_nargs):
         # generate a bunch of individuals with adfs within the specified ranges
         pop = []
         for idx in range(pop_size):
             adfs = []
-            for adf_num in range(random.choice(adf_range)):
-                adfs.append(random.choice(args_range))
+            for adf_num in range(adf_range[0], random.randint(adf_range[0], adf_range[1])):
+                adfs.append(random.randint(adf_nargs[0], adf_nargs[1]))
             pop.append(ind(adfs))
 
         super(Population, self).__init__(pop)
@@ -198,11 +198,10 @@ class Population(list):
 """
 ### Data Structures
 """
-def main(pop_size=100, gens=100, adf_count=(0,4), adf_args=(1,5), pb_mate=80):
-    adf_range = range(adf_count[0], adf_count[1])
-    args_range = range(adf_args[0], adf_args[1])
-    pop = Population(Individual, pop_size, adf_range, args_range)
-    hof = tools.HallOfFame(2)
+def main(pop_size=100, gens=100, adf_range=(0,4), adf_nargs=(1,5), pb_mate=80, best_of_class=5):
+
+    pop = Population(Individual, pop_size, adf_range, adf_nargs)
+    hof = tools.HallOfFame(1)
 
     stats = tools.Statistics(lambda ind: ind.fitness.values)
     stats.register("avg", numpy.mean)
@@ -226,11 +225,16 @@ def main(pop_size=100, gens=100, adf_count=(0,4), adf_args=(1,5), pb_mate=80):
     # Generational loop
     for gen in range(gens):
         log(gen)
-        #print([i.signature for i in sorted(pop, key=lambda i: i.fitness.values[0])])
-        if hof[0].fitness.values[0] < 0.25:     # correct and less than ? nodes visited
+
+        if hof[0].fitness.values[0] < 0.25:     # end early if correct and less than x nodes visited
             break
-        offspring = []
-        for idx in range(len(pop)):
+
+        # the best x of the population are cloned directly into the next generation
+        sorted_pop = sorted(pop, key=lambda x: x.fitness.values[0])
+        offspring = sorted_pop[:best_of_class]
+
+        # rest of the population clone, mate, or mutate at random
+        for idx in range(len(pop) - best_of_class):
 
             # decide how to alter this individual
             rand = random.randint(0, 100)
