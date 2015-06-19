@@ -1,9 +1,6 @@
 # An attempt to do the parity problem with our modifications (Kosa).
 # Modified to use an ADF.
 
-# percentage of pop to clone. Mut vs mate is an input
-PB_CLONE = 2
-
 MAX_MATE_ATTEMPTS = 10
 
 import random
@@ -45,7 +42,7 @@ for i in range(PARITY_SIZE_M):
 """
 # you can build anything you need from this one primitive
 def nor(a,b):
-    return not(a or b)
+    return (a|b)^1
 primitives = [(nor, 2)]
 
 
@@ -69,7 +66,7 @@ class Individual(list):
     """
     class NoMateException(Exception): pass
 
-    def __init__(self, adf_signature):
+    def __init__(self, adf_signature, growth):
         """
         :param adf_signature: a list of the number of args for each adf
         eg: [1,2,3] means 3 adfs of 1 arg, 2 args, and 3 args respectively
@@ -78,6 +75,8 @@ class Individual(list):
         self.psets = []
         self.branches = []
         self.signature = adf_signature
+        self.grow_pb = growth[0] / 100
+        self.grow_max = growth[1]
 
         # A number of Automatically Defined Functions
         for adf_num, nargs in enumerate(adf_signature):
@@ -85,19 +84,20 @@ class Individual(list):
             for subset in self.psets:
                 adfset.addADF(subset)
             self.psets.append(adfset)
-            self.branches.append(PrimitiveTree(genGrow(adfset, 5)))
+            self.branches.append(PrimitiveTree(genGrow(adfset, max_=self.grow_max, prob=self.grow_pb)))
 
         # The Result Producing Branch and pset
         rpbset = get_pset(primitives, "MAIN", PARITY_FANIN_M, "IN")
         for subset in self.psets:
             rpbset.addADF(subset)
         self.psets.append(rpbset)
-        self.branches.append(PrimitiveTree(genGrow(rpbset, 5)))
+        self.branches.append(PrimitiveTree(genGrow(rpbset, max_=self.grow_max, prob=self.grow_pb)))
 
         super(Individual, self).__init__(self.branches)
         self.fitness = FitnessMin()
 
     def evaluate(self):
+        # run the function with the inputs and outputs and sum the outputs for a score out of 32
         func = compileADF(self, self.psets)
         score = 0
         try:
@@ -118,15 +118,15 @@ class Individual(list):
                 nodes += 1
             else:
                 nodes += len(self[int(node.name[1])])
-
         modifier = 1 + (-2 ** - (nodes / 250))
+
         return score + modifier,
 
     def clone(self):
         return copy.deepcopy(self)
 
     def mutate(self):
-        mut_expr = partial(genGrow, max_=3)
+        mut_expr = partial(genGrow, max_=self.grow_max, prob=self.grow_pb)
         branch = random.choice(range(len(self)))
         self[branch] = mutUniform(self[branch], expr=mut_expr, pset=self.psets[branch])[0]
 
@@ -180,14 +180,14 @@ class Individual(list):
 
 
 class Population(list):
-    def __init__(self, ind, pop_size, adf_range, adf_nargs):
+    def __init__(self, ind, pop_size, adf_range, adf_nargs, growth):
         # generate a bunch of individuals with adfs within the specified ranges
         pop = []
         for idx in range(pop_size):
             adfs = []
             for adf_num in range(adf_range[0], random.randint(adf_range[0], adf_range[1])):
                 adfs.append(random.randint(adf_nargs[0], adf_nargs[1]))
-            pop.append(ind(adfs))
+            pop.append(ind(adfs, growth))
 
         super(Population, self).__init__(pop)
 
@@ -198,9 +198,16 @@ class Population(list):
 """
 ### Data Structures
 """
-def main(pop_size=100, gens=100, adf_range=(0,4), adf_nargs=(1,5), pb_mate=80, best_of_class=5):
+def main(pop_size=100, gens=100, adf_range=(0,4), adf_nargs=(1,5), mmc=(80,18,2), best_of_class=5, growth=(30,5)):
 
-    pop = Population(Individual, pop_size, adf_range, adf_nargs)
+    mmc = (mmc[0]/sum(mmc), mmc[1]/sum(mmc), mmc[2]/sum(mmc))
+    print("Running %s generations of %s indviduals with %s ADFs of %s arguments.\n"
+          "The best %s are cloned, thence %s%% mate, %s%% mutate, and %s%% clone.\n"
+          "Tree growth has a %s%% probabilty being a terminal of up to %s deep per growth.\n" % (
+            gens, pop_size, adf_range, adf_nargs, best_of_class, 100*mmc[0], 100*mmc[1], 100*mmc[2],
+            growth[0], growth[1]))
+
+    pop = Population(Individual, pop_size, adf_range, adf_nargs, growth)
     hof = tools.HallOfFame(1)
 
     stats = tools.Statistics(lambda ind: ind.fitness.values)
@@ -226,7 +233,7 @@ def main(pop_size=100, gens=100, adf_range=(0,4), adf_nargs=(1,5), pb_mate=80, b
     for gen in range(gens):
         log(gen)
 
-        if hof[0].fitness.values[0] < 0.25:     # end early if correct and less than x nodes visited
+        if hof[0].fitness.values[0] < 0.15:     # end early if correct and less than x nodes visited
             break
 
         # the best x of the population are cloned directly into the next generation
@@ -237,19 +244,10 @@ def main(pop_size=100, gens=100, adf_range=(0,4), adf_nargs=(1,5), pb_mate=80, b
         for idx in range(len(pop) - best_of_class):
 
             # decide how to alter this individual
-            rand = random.randint(0, 100)
-            if rand in range(0, PB_CLONE):
-                action = 'clone'
-            elif rand in range(0, pb_mate):
-                action = 'mate'
-            else:
-                action = 'mutate'
+            rand = random.random()
 
-            if action == 'clone':
-                ind = pop.select(1)
-                child = ind.clone()
-
-            if action == 'mate':
+            # MATE/CROSSOVER
+            if rand < mmc[0]:
                 for _ in range(0, MAX_MATE_ATTEMPTS):
                     try:
                         receiver, contributor = pop.select(2)
@@ -262,10 +260,15 @@ def main(pop_size=100, gens=100, adf_range=(0,4), adf_nargs=(1,5), pb_mate=80, b
                     child = pop.select(1)  # fallback to a clone if we can't successfully mate
                     print("No mate after %s attempts." % MAX_MATE_ATTEMPTS)
 
-            if action == 'mutate':
+            # MUTATE
+            elif rand < (mmc[0] + mmc[1]):
                 ind = pop.select(1)
                 child = ind.clone()
                 child.mutate()
+
+            # CLONE
+            else:
+                child = pop.select(1)
 
             offspring.append(child)
         pop[:] = offspring

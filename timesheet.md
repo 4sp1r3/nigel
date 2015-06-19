@@ -1,9 +1,16 @@
 # Timesheet
 
-## Fri Jun 19 (1
+## Fri Jun 19 (4.5,5.5)
 
 * show, tell, and tweak with nige
-
+* examined the way the signature of the pop skews over time toward uniformity
+* profiled the runs and established most of the time is consumed running the programs to evaluate their score
+* tweaked the 'nor' to bitwise (halves the run time), removed some unnecessary cloning - speeds it up a bit more.
+* looking into multiprocessing
+* show and tell
+* configure the mate/mutate/clone proportions
+* configure the initial/mutate maximum tree sizes: took some time making sure that the growth is working properly;
+   it is, a big growth depth can make for enourmous trees!
 
 ## Thu Jun 18 (3+3+1)
 

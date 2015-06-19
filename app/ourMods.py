@@ -156,7 +156,7 @@ class DeadBranchError(Exception):
     pass
 
 
-def genGrow(pset, max_, type_=None, prob=0.3):
+def genGrow(pset, max_, type_=None, prob=0.30):
     """Generate an expression tree.
     Branches can be of any height, provided they are not more than *max*.
 
@@ -186,7 +186,7 @@ def genGrow(pset, max_, type_=None, prob=0.3):
 
     # if chance dictates, return a terminal, if you can
     try:
-        if prob > random.random():
+        if random.random() < prob:
             return random_terminal()
     except DeadBranchError:
         # No problem, press on, we'll try the prims.
