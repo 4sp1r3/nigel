@@ -316,7 +316,10 @@ def adfdraw(individual):
     figsize = (25, max([i.height for i in individual]) + 2)
     fig = plt.figure(figsize=figsize)
     fig.suptitle("Score {:2.4f}".format(individual.fitness.values[0]), fontsize=16, y=0.05)
-    fig.text(0.0, 0.05, "\n".join(["{} ({})".format(k, v.arity) for k, v in sorted(individual.psets[-1].mapping.items())]))
+    fig.text(0.0, 0.05, "\n".join(
+        ["{}".format(individual.signature)] +
+        ["{} ({})".format(k, v.arity) for k, v in sorted(individual.psets[-1].mapping.items())]
+    ))
     nx.draw_networkx_nodes(graph, pos, node_size=900, node_color="w")
     nx.draw_networkx_edges(graph, pos)
     nx.draw_networkx_labels(graph, pos, labels)

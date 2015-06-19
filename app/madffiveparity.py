@@ -1,10 +1,9 @@
 # An attempt to do the parity problem with our modifications (Kosa).
 # Modified to use an ADF.
 
-GENERATIONS = 5
-POP_SIZE = 300
-ADF_RANGE = range(0, 4)
-ADF_ARGS_RANGE = range(1, 4)
+# percentage of pop to clone. Mut vs mate is an input
+PB_CLONE = 2
+
 MAX_MATE_ATTEMPTS = 10
 
 import random
@@ -70,14 +69,19 @@ class Individual(list):
     """
     class NoMateException(Exception): pass
 
-    def __init__(self):
+    def __init__(self, adf_signature):
+        """
+        :param adf_signature: a list of the number of args for each adf
+        eg: [1,2,3] means 3 adfs of 1 arg, 2 args, and 3 args respectively
+        :return:
+        """
         self.psets = []
         self.branches = []
+        self.signature = adf_signature
 
         # A number of Automatically Defined Functions
-        adf_count = random.choice(ADF_RANGE)
-        for adf_num in range(adf_count):
-            adfset = get_pset(primitives, 'F%s' % adf_num, random.choice(ADF_ARGS_RANGE))
+        for adf_num, nargs in enumerate(adf_signature):
+            adfset = get_pset(primitives, 'F%s' % adf_num, nargs)
             for subset in self.psets:
                 adfset.addADF(subset)
             self.psets.append(adfset)
@@ -176,8 +180,16 @@ class Individual(list):
 
 
 class Population(list):
-    def __init__(self, ind, n):
-        super(Population, self).__init__([ind() for _ in range(n)])
+    def __init__(self, ind, pop_size, adf_range, args_range):
+        # generate a bunch of individuals with adfs within the specified ranges
+        pop = []
+        for idx in range(pop_size):
+            adfs = []
+            for adf_num in range(random.choice(adf_range)):
+                adfs.append(random.choice(args_range))
+            pop.append(ind(adfs))
+
+        super(Population, self).__init__(pop)
 
     def select(self, n):
         return selProbablistic(self, n)
@@ -186,9 +198,10 @@ class Population(list):
 """
 ### Data Structures
 """
-def main(pop_size=POP_SIZE, gens=GENERATIONS):
-    #random.seed(21)
-    pop = Population(Individual, pop_size)
+def main(pop_size=100, gens=100, adf_count=(0,4), adf_args=(1,5), pb_mate=80):
+    adf_range = range(adf_count[0], adf_count[1])
+    args_range = range(adf_args[0], adf_args[1])
+    pop = Population(Individual, pop_size, adf_range, args_range)
     hof = tools.HallOfFame(2)
 
     stats = tools.Statistics(lambda ind: ind.fitness.values)
@@ -213,11 +226,20 @@ def main(pop_size=POP_SIZE, gens=GENERATIONS):
     # Generational loop
     for gen in range(gens):
         log(gen)
+        #print([i.signature for i in sorted(pop, key=lambda i: i.fitness.values[0])])
         if hof[0].fitness.values[0] < 0.25:     # correct and less than ? nodes visited
             break
         offspring = []
         for idx in range(len(pop)):
-            action = random.choice(('clone', 'mate', 'mutate'))
+
+            # decide how to alter this individual
+            rand = random.randint(0, 100)
+            if rand in range(0, PB_CLONE):
+                action = 'clone'
+            elif rand in range(0, pb_mate):
+                action = 'mate'
+            else:
+                action = 'mutate'
 
             if action == 'clone':
                 ind = pop.select(1)

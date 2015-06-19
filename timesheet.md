@@ -1,10 +1,18 @@
 # Timesheet
 
-## Thu Jun 18 (3+2)
+## Fri Jun 19 (1
+
+* show, tell, and tweak with nige
+
+
+## Thu Jun 18 (3+3+1)
 
 * working on grafting adfs with variable argument counts. done.
 * insert the score and function arity into the actual graph
 * do many runs for testing and experimentation.
+* enable nige to configure number of adfs and arg counts
+* identified a problem that the population is morphing the signatures... I don't think it is supposed to do that:
+    due to the normalized selection the pop quickly skews towards a uniform signature.
 
 ## Wed Jun 17 (3+3+2)
 
