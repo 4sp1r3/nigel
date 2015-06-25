@@ -1,5 +1,39 @@
 # Timesheet
 
+
+## Thu 25 June (2.5)
+
+* still divergent on the AST track. Been interesting, but I'm going to have to switch back.  I've learned a lot, and
+   better understand the concepts, but it's taking too long and I'm concerned about the deap response that they've
+   tried it and lambda's were faster.  I can see they're probably easier to get your head around but, on the other hand,
+   I'm not convinced they're adaptable to more advanced program structures, like loops or assignments.
+
+## Wed 24 June (7hrs)
+
+* pushing ahead with new code; currently feeling a little perplexed where the obstacle is. Why did deap take the path
+   they did with the lambda's and all?
+* I've wound up back at ASTs.  It was all going well until I started doing expressions.  Basically these 'trees' are
+   expressions which need to defer evaluation until instantiation - by providing input arguments.  Which might relate
+   to Kosa's 'dummy' arguments: you need a placeholder in the unevaluated expression.  Am I building a lexer, a
+   parser, a compiler, or interpreter!?  The missing concept of the moment has been 'expression'.
+
+## Tues 23 June (7hrs)
+
+* implementing typed ADFs
+* Hmm, difficult to get traction. Deap PrimitiveSets require input and output parameters, which strikes me as odd
+   as well as making it hard to apply to our problem.  Add to that the PrimtiiveTree, makes sense at least, also
+   expects to know certain things at instantiation time, but we don't—we just want to give it an 'urn' of options
+   and say pick one for yourself.  Not insurmountable issues, but more untidyness working around these issues, I found
+   myself constantly gravitating back toward replacing more bits of deap.
+* So working on growing our own Function Trees, which know what a Function Set is and how to use it.  So far its
+   proving quite easy and tidy, so... no reason to stop yet.
+
+## Mon 22 June (5hrs)
+
+* start applying uber-adfs to pythagoras to expose the most pertinent questions
+* much discussion of the spec on how to handle generation of typed ADFs
+* discuss and document exactly that (issue #13)
+
 ## Fri Jun 19 (4.5,5.5)
 
 * show, tell, and tweak with nige
