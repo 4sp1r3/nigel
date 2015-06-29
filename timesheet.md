@@ -1,7 +1,31 @@
 # Timesheet
 
+# Invoice #6 (hrs June 15 - June 29)
 
-## Thu 25 June (2.5)
+## Mon 29 June (2hrs, 2hr, 4hrs: 8hrs)
+
+* plugging away trying to get some shape; first tried using __new__ to setup the individuals class to generate adfs,
+   but that went nowhere.  Now making classes for 'Branch' and 'FunctionSet' to try and grow typed branches in a 
+   self managed object which is tied together by 'Individual'.
+* (1) FunctionSet - add types and pick any terminal or prim, or any term/prim of a type
+* (2) FunctionSet - add methods to proportionately randomize and select types of primitives and terminals or either
+* (3) FunctionSet - still thrashing out the set of primitive functions in order to pull random type or node within
+       primitive, terminal, or both scope sets. Return sets or lists of nodes, terminals, or primitives.
+* (4) FunctionSet - pumping out prims, then got down to grow and realized which ones I really need; just random_node
+       and list of all nodes really.  Start over toward that end.
+* (5) FunctionSet - random_nodes, primitives/terminals of specified types, working into grow
+* (6) FunctionSet - tada! the grow works, and is much simpler than before; doesn't have the no nodes of type
+       problem we used to?!?
+* fiddled around with Branch but couldn't stick with it, spent.
+
+## Fri 26 June (1+1.5: 2.5)
+
+* getting back into creating a tidy typed library drawing from deap underneath. Creating a FunctionSet to oversee
+   their psets.
+* nope. population? nope... extracting the Individual and focusing on generalizing it's instansiation-with a view
+   to better controlling the subsets within.
+
+## Thu 25 June (3.0)
 
 * still divergent on the AST track. Been interesting, but I'm going to have to switch back.  I've learned a lot, and
    better understand the concepts, but it's taking too long and I'm concerned about the deap response that they've
@@ -34,7 +58,7 @@
 * much discussion of the spec on how to handle generation of typed ADFs
 * discuss and document exactly that (issue #13)
 
-## Fri Jun 19 (4.5,5.5)
+## Fri Jun 19 (4.5,5.5: 10hrs)
 
 * show, tell, and tweak with nige
 * examined the way the signature of the pop skews over time toward uniformity
@@ -46,7 +70,7 @@
 * configure the initial/mutate maximum tree sizes: took some time making sure that the growth is working properly;
    it is, a big growth depth can make for enourmous trees!
 
-## Thu Jun 18 (3+3+1)
+## Thu Jun 18 (3+3+1: 7hrs)
 
 * working on grafting adfs with variable argument counts. done.
 * insert the score and function arity into the actual graph
@@ -55,7 +79,7 @@
 * identified a problem that the population is morphing the signatures... I don't think it is supposed to do that:
     due to the normalized selection the pop quickly skews towards a uniform signature.
 
-## Wed Jun 17 (3+3+2)
+## Wed Jun 17 (3+3+2: 8hrs)
 
 * rewrite the mating routines over and over until it actually works considering branches and psets nodetypes etc.
 * do lots of runs and watch it get worse results than ever; it's so focused on short nodecounts the popset gets
@@ -70,12 +94,12 @@
    (item 4 in his point-typing list).
 
 
-## Tues Jun 16 (2+3)
+## Tues Jun 16 (2+3: 5hrs)
 
 * added pset parameter to the cxPTreeGraft routine to ensure it only proposes a graft that has elements known
     to the receiving branch and play around trying to get it to work without breaking backward compat
 
-## Mon Jun 15 (2hr, 2hr, 1hr, 3hr)
+## Mon Jun 15 (2hr, 2hr, 1hr, 3hr: 8hrs)
 
 * try to get some ast going. Found GreeTreeSnakes then a winding path lead to [Astor](https://github.com/berkerpeksag/astor)
     had a play with that; seems it can convert code to ast and back.  Trying to work out how to apply it: rather than
