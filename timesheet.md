@@ -1,5 +1,18 @@
 # Timesheet
 
+
+## Wed 1 Jul (8:30-,  -1hr)
+
+* generating random adfs and evaluating whether they use all their arguments
+
+
+## Tues 30 June (2hr, 2.5, 2.5: 7hrs)
+
+* (1) ProgramTree - randomising the number and types of adfs
+* (2) DummyTerminal - trying to implement morphing terminals and add them to the fsets
+* Work with nigel, one tiny step at a time.
+* building the adf generation little bit at a time, trying to tie it together with deap
+
 # Invoice #6 (hrs June 15 - June 29)
 
 ## Mon 29 June (2hrs, 2hr, 4hrs: 8hrs)
