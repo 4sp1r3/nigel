@@ -1,10 +1,11 @@
 # Timesheet
 
 
-## Wed 1 Jul (8:30-,  -1hr)
+## Wed 1 Jul (8:30-1:00,  -1hr, 3:30-)
 
 * generating random adfs and evaluating whether they use all their arguments
-
+* generating the RPF using the same adf routines and the adfs themselves.  A little tangent that
+   started trying to ensure the RPB used all the ADFs, but that was silly, so aborted.
 
 ## Tues 30 June (2hr, 2.5, 2.5: 7hrs)
 
