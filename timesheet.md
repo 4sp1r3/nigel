@@ -1,11 +1,16 @@
 # Timesheet
 
 
-## Wed 1 Jul (8:30-1:00,  -1hr, 3:30-)
+## Wed 1 Jul (8:30-1:00,  -1hr, 3:30-7, 7:30-)
 
 * generating random adfs and evaluating whether they use all their arguments
 * generating the RPF using the same adf routines and the adfs themselves.  A little tangent that
    started trying to ensure the RPB used all the ADFs, but that was silly, so aborted.
+* evaluates the adfs fine, until routines start refering to each other-then kapow
+* bang away trying to decode out deap's weird (er, immature?) ADF compilation; their addADF doesn't practically
+   nothing and we need to track the pset and tree for each adf ourselves (and keep them in sync/together)
+* refactor everything(!) because we'd ran straight back into the chicken/egg syndrome
+* woot. evaluatable nested adfs/rpb. just one more refactor to go (hopefully).
 
 ## Tues 30 June (2hr, 2.5, 2.5: 7hrs)
 

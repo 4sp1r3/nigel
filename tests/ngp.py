@@ -5,51 +5,76 @@ import unittest
 
 from deap.gp import PrimitiveSetTyped as DEAPPrimitiveSetTyped
 from deap.gp import PrimitiveTree as DEAPPrimitiveTree
+from deap.gp import compileADF
 from ourMods import genGrow, DeadBranchError
 
 
-class Primitive(object):
-    def __init__(self, func, intypes, outtype, label):
-        self.func = func
-        self.intypes = intypes
-        self.outtype = outtype
-        self.label = label
-
-    def __repr__(self):
-        return self.label
+class GrowException(Exception):
+    """Tried a bunch of times but could not grow a suitable tree from the given primitives"""
+    pass
 
 
-class GrowException(Exception): pass
-
-
-class Program(object):
+class Baseset(object):
     """
-    An (individual) program of a random number of adfs and a Result Producing Branch (RPB)
+    Basic list of primitive functions to give to deap
+
+    Add tuples to the list (func, intypes, outtype)
+    Eg. (operator.add, [int, int], int)
     """
-    max_adfs = 4
+    # min, max number of input arguments to adfs
+    nargs = (1, 5)
 
-    def __init__(self, pset, intypes, outtype):
-        self.pset = pset
-        self.intypes = intypes
-        self.outtype = outtype
+    def __init__(self, primitives):
+        self.primitives = primitives
+        self.adfsets = []
 
-        # generate a random suite of ADFs
-        self.ADFs = []
-        for idx in range(random.choice(list(range(self.max_adfs)))):
-            name = "F%s" % idx
-            adf = ADF(self.pset)
-            self.ADFs.append(adf)
-            self.pset.append(Primitive(name, adf.intypes, adf.outtype, name))
+    def get_random_outtype(self):
+        urn = list()
+        for prim in self.primitives:
+            urn.append(prim[2])
+        return random.choice(urn)
 
-        self.RPB = ADF(self.pset, self.intypes, self.outtype)
+    def get_random_intypes(self):
+        """Return a list of input types of random type and number"""
+        # put all the input types in all the primitives into an urn
+        urn = list()
+        for prim in self.primitives:
+            for intype in prim[1]:
+                urn.append(intype)
+
+        # choose the number of args
+        nargcount = random.randint(self.nargs[0], self.nargs[1])
+
+        # range the args from 0 to ensure they're contiguous
+        return [random.choice(urn) for _ in range(nargcount)]
+
+    def getPrimitiveSet(self, name, intypes, outtype, prefix):
+        """Return a deap primitive set corresponding to the base prims and any added adfs"""
+        pset = DEAPPrimitiveSetTyped(name, intypes, outtype, prefix)
+        for prim in self.primitives:
+            pset.addPrimitive(prim[0], prim[1], prim[2])
+        for adfset in self.adfsets:
+            pset.addADF(adfset)
+        return pset
+
+    def addADF(self, pset):
+        """Add a new primitive to subsequent primitivesets reflecting the meta properties of the pset.
+
+        :param pset: needs to have 'name', 'ins', and 'ret' properties - so a PrimitiveSet will do
+            but note the DEAP addADF routine doesn't use anything other than these args: it adds them as
+            a primitive to the pset it is acting on, but in a slightly different way to normal prims
+            (they're not added to the pset context).
+
+            The 'name' probably should be unique, although DEAP do not assert this?
+        """
+        self.adfsets.append(pset)
 
 
-class ADF(object):
+
+def FunctionFactory(baseset, name, intypes=None, outtype=None, prefix='A'):
     """
-    A subroutine within a program
+    A DEAP PrimitiveTree which can construct itself randomly
     """
-    # range of input arguments
-    nargs = (1,5)
     # maximum size to grow the tree initially
     grow_max = 5
     # maximum number of times to attempt to grow a complete adf before abandoning
@@ -57,67 +82,65 @@ class ADF(object):
     # terminal density during growth (1.0 = all terminals)
     grow_term_pb = 0.3
 
-    def __init__(self, pset, intypes=None, outtype=None):
-        # a collection of primitive functions (just a list of Primitive types)
-        self.pset = pset
+    # pick an outtype
+    if outtype is None:
+        outtype = baseset.get_random_outtype()
 
-        if outtype is None:
-            self.outtype = ADF.get_random_outtype(self.pset)
-        else:
-            self.outtype = outtype
-        if intypes is None:
-            self.intypes = ADF.get_random_intypes(self.pset, self.nargs)
-        else:
-            self.intypes = intypes
+    # pick the intypes
+    if intypes is None:
+        intypes = baseset.get_random_intypes()
 
-        self.tree = self.get_random_tree()
+    pset = baseset.getPrimitiveSet(name, intypes, outtype, prefix)
 
-    def __repr__(self):
-        return str(self.tree)
+    for _ in range(max_grow_attempts):
+        try:
+            tree = DEAPPrimitiveTree(genGrow(pset, grow_max, outtype, prob=grow_term_pb))
+        except DeadBranchError:
+            continue
+        all_args_used = all([pset.mapping[arg] in tree for arg in pset.arguments])
+        if all_args_used and len(tree) > 1:
+            return tree, pset
 
-    def get_primitivesettyped(self, name='ADF'):
-        deap_pset = DEAPPrimitiveSetTyped(name, self.intypes, self.outtype, 'A')
-        for prim in self.pset:
-            deap_pset.addPrimitive(prim.func, prim.intypes, prim.outtype, prim.label)
-        return deap_pset
+    raise GrowException("Failed to grow a suitable ADF despite %s attempts." % max_grow_attempts)
 
-    def get_random_tree(self):
-        """Return a deap primitive tree grown from the pset
-        * one that uses all the dummy terminals
-        * raise error if no acceptable tree after max_grow_attempts
-        """
-        deap_pset = self.get_primitivesettyped()
-        for _ in range(ADF.max_grow_attempts):
-            try:
-                tree = DEAPPrimitiveTree(genGrow(deap_pset, ADF.grow_max, self.outtype, prob=ADF.grow_term_pb))
-            except DeadBranchError:
-                continue
-            all_args_used = all([deap_pset.mapping[arg] in tree for arg in deap_pset.arguments])
-            if all_args_used and len(tree) > 1:
-                return tree
-        raise GrowException("Failed to grow a suitable ADF despite %s attempts." % ADF.max_grow_attempts)
 
-    @staticmethod
-    def get_random_outtype(pset):
-        urn = list()
-        for prim in pset:
-            urn.append(prim.outtype)
-        return random.choice(urn)
+class Individual(object):
+    """
+    An (individual) program of a random number of adfs and a Result Producing Branch (RPB)
+    """
+    max_adfs = 4
 
-    @staticmethod
-    def get_random_intypes(pset, nargs=None):
-        """Return a list of input types of random type and number"""
-        # put all the input types in all the primitives into an urn
-        urn = list()
-        for prim in pset:
-            for intype in prim.intypes:
-                urn.append(intype)
+    def __init__(self, baseset, intypes, outtype):
+        self.baseset = baseset
+        self.intypes = intypes
+        self.outtype = outtype
 
-        # choose the number of args
-        if nargs is None or isinstance(nargs, tuple):
-            nargs = random.randint(nargs[0], nargs[1])
-        return [random.choice(urn) for _ in range(nargs)]
+        # randomly decide the number of adfs
+        nADFs = random.choice(list(range(self.max_adfs)))
 
+        # generate the adfs
+        self.ADFs = []
+        for idx in range(nADFs):
+            adf, pset = FunctionFactory(baseset, 'ADF%s' % idx)
+            self.ADFs.append((adf, pset))
+            baseset.addADF(pset)
+
+        # generate the RPB
+        tree, pset = FunctionFactory(baseset, "MAIN", self.intypes, self.outtype, prefix='IN')
+        self.RPB = (tree, pset)
+
+    @property
+    def psets(self):
+        return [adf[1] for adf in self.ADFs] + [self.RPB[1]]
+
+    @property
+    def trees(self):
+        return [adf[0] for adf in self.ADFs] + [self.RPB[0]]
+
+    def evaluate(self):
+        func = compileADF(self.trees, self.psets)
+
+        return 0
 
 
 def nor(a, b):
@@ -128,70 +151,69 @@ class NGPTestCase(unittest.TestCase):
 
     def test_silly_pset(self):
         # make the primitive set
-        pset = [
-            Primitive(operator.add, [int, int], int, '+i'),
-            Primitive(operator.sub, [float, float], float, '+f'),
-            Primitive(nor, [bool, bool], bool, '^'),
-        ]
+        bset = Baseset([
+            (operator.add, [int, int], int),
+            (operator.sub, [int, int], int),
+            #(nor, [bool, bool], bool),
+        ])
         # declare adfs
         for n in range(5):
-            adf = ADF(pset)
-            print("\nADF%s: " % n, adf.outtype, adf.intypes)
-            deap_pset = adf.get_primitivesettyped()
-            try:
-                print(DEAPPrimitiveTree(genGrow(deap_pset, 5, adf.outtype)))
-            except DeadBranchError as ex:
-                print("ERROR:", ex)
+            tree, pset = FunctionFactory(bset, 'ADF')
+            print("\nADF%s: " % n, pset.ret, pset.ins)
+            print(tree)
 
-    def test_success_rate_generating_full_adfs(self):
+    def test_generation_of_adfs(self):
         """generate lots of adfs and count how many use all their arguments"""
         # make the primitive set
-        pset = [
-            Primitive(operator.add, [int, int], float, '+i'),
-            Primitive(operator.add, [float, float], int, '+i'),
-            Primitive(operator.sub, [int, int], float, '-f'),
-            Primitive(operator.sub, [float, float], int, '-i'),
-            Primitive(operator.mul, [float, float], float, '*f'),
-            Primitive(operator.mul, [int, int], int, '*i'),
-        ]
+        bset = Baseset([
+            (operator.add, [int, int], float),
+            (operator.add, [float, float], int),
+            (operator.sub, [int, int], float),
+            (operator.sub, [float, float], int),
+            (operator.mul, [float, float], float),
+            (operator.mul, [int, int], int),
+        ])
         # declare adfs
         num = 1000
         for n in range(num):
-            adf = ADF(pset)
-            print("ADF%s: " % n, len(adf.intypes), adf.intypes, '->', adf.outtype)
-            print(adf.tree)
+            tree, pset = FunctionFactory(bset, 'TST%s' % n)
+            print(len(pset.ins), pset.ins, '->', pset.ret)
+            print(tree)
 
     def test_specific_inout(self):
-        pset = [
-            Primitive(operator.add, [int, int], int, '+'),
-            Primitive(operator.sub, [int, int], int, '-'),
-            Primitive(operator.mul, [float, float], float, '*'),
-            Primitive(operator.truediv, [int, int], float, '/'),
-        ]
-        intypes = ADF.get_random_intypes(pset, 2)
-        outtype = ADF.get_random_outtype(pset)
-        adf = ADF(pset, intypes, outtype)
-        print(intypes, outtype)
-        print(adf)
-
+        bset = Baseset([
+            (operator.add, [int, int], int),
+            (operator.sub, [int, int], int),
+            (operator.mul, [float, float], float),
+            (operator.truediv, [int, int], float),
+        ])
+        for _ in range(5):
+            tree, pset = FunctionFactory(bset, 'TST', [int, int], float)
+            print(tree)
+            print(pset.mapping.keys())
 
 
 class ProgramTestCase(unittest.TestCase):
     def test_program(self):
         # make the primitive set
-        pset = [
-            Primitive(operator.add, [int, int], float, '+i'),
-            Primitive(operator.add, [float, float], int, '+i'),
-            Primitive(operator.sub, [int, int], float, '-f'),
-            Primitive(operator.sub, [float, float], int, '-i'),
-            Primitive(operator.mul, [float, float], float, '*f'),
-            Primitive(operator.mul, [int, int], int, '*i'),
-        ]
-        intypes = ADF.get_random_intypes(pset, 2)
-        outtype = ADF.get_random_outtype(pset)
-        prog = Program(pset, intypes, outtype)
+        bset = Baseset([
+            (operator.add, [int, int], float),
+            (operator.add, [float, float], int),
+            (operator.sub, [int, int], float),
+            (operator.sub, [float, float], int),
+            (operator.mul, [float, float], float),
+            (operator.mul, [int, int], int),
+        ])
+        intypes = [int, float]
+        outtype = float
+        prog = Individual(bset, intypes, outtype)
         print("Program in/out:", intypes, outtype)
-        print("Program prims:", prog.pset)
+        print("Program prims:", prog.baseset)
         for idx, adf in enumerate(prog.ADFs):
-            print("F%s:" % idx, len(adf.intypes), adf)
-        print("RPB:", prog.RPB)
+            print("F%s:" % idx, adf[0])
+
+        print("RPB:", prog.RPB[0])
+
+        print(prog.evaluate())
+
+        # print(prog.RPB[1].context.keys())
