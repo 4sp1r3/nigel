@@ -1,9 +1,10 @@
 # Timesheet
 
 
-## Thur 2 Jul (9:00-
+## Thur 2 Jul (9:00-11:00, 1:00-
 
-* 
+* cleaned up the typed random adf generation and pushed out a notebook for it
+* regenerate the signature if growing fails repeatedly
 
 ## Wed 1 Jul (8:30-1:00,  -1hr, 3:30-7, 7:30-11:30=3.5+3.5+4=11hrs)
 

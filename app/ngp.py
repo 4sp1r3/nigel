@@ -31,6 +31,8 @@ class Baseset(object):
         urn = list()
         for prim in self.primitives:
             urn.append(prim[2])
+        for adf in self.psets:
+            urn.append(adf.ret)
         return random.choice(urn)
 
     def get_random_intypes(self):
@@ -39,6 +41,9 @@ class Baseset(object):
         urn = list()
         for prim in self.primitives:
             for intype in prim[1]:
+                urn.append(intype)
+        for adf in self.psets:
+            for intype in adf.ins:
                 urn.append(intype)
 
         # choose the number of args
