@@ -14,8 +14,8 @@ class NGPTestCase(unittest.TestCase):
     def test_silly_pset(self):
         # make the primitive set
         bset = Baseset([
-            (operator.add, [int, int], int),
-            (operator.sub, [int, int], int),
+            (operator.add, [int, int], float),
+            (operator.sub, [float, float], int),
             #(nor, [bool, bool], bool),
         ])
         # declare adfs

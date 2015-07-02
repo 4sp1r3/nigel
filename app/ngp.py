@@ -71,6 +71,8 @@ class Baseset(object):
         grow_term_pb = 0.3
         # maximum number of times to attempt to grow a complete adf before abandoning
         max_grow_attempts = 50
+        # maximum number of signatures to try before ultimately giving up
+        max_signature_attempts = 1000
 
         # pick an outtype
         if outtype is None:
@@ -80,18 +82,26 @@ class Baseset(object):
         if intypes is None:
             intypes = self.get_random_intypes()
 
-        pset = self.getPrimitiveSet(name, intypes, outtype, prefix)
-        for _ in range(max_grow_attempts):
-            try:
-                tree = PrimitiveTree(genGrow(pset, grow_max, outtype, prob=grow_term_pb))
-            except DeadBranchError:
-                continue
-            all_args_used = all([pset.mapping[arg] in tree for arg in pset.arguments])
-            if all_args_used and len(tree) > 1:
-                self.psets.append(pset)
-                return tree, pset
-        else:
-            raise GrowException("Failed to grow a suitable ADF despite %s attempts." % max_grow_attempts)
+        for _ in range(max_signature_attempts):
+            pset = self.getPrimitiveSet(name, intypes, outtype, prefix)
+            for _ in range(max_grow_attempts):
+                try:
+                    tree = PrimitiveTree(genGrow(pset, grow_max, outtype, prob=grow_term_pb))
+                except DeadBranchError:
+                    continue
+                all_args_used = all([pset.mapping[arg] in tree for arg in pset.arguments])
+                if all_args_used and len(tree) > 1:
+                    self.psets.append(pset)
+                    return tree, pset
+            else:
+                # try a different signature
+                outtype = self.get_random_outtype()
+                intypes = self.get_random_intypes()
+
+        # we tried but no valid tree could be grown
+        raise GrowException("No ADF tree could be grown after %s attempts with different ADF signatures, "
+                            "where %s attempts were made to grow within each signature. Please review your "
+                            "definitions of the primitives and retry" % (max_signature_attempts, max_grow_attempts))
 
 
 class Individual(object):
