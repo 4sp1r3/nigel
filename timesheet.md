@@ -1,7 +1,11 @@
 # Timesheet
 
 
-## Wed 1 Jul (8:30-1:00,  -1hr, 3:30-7, 7:30-)
+## Thur 2 Jul (9:00-
+
+* 
+
+## Wed 1 Jul (8:30-1:00,  -1hr, 3:30-7, 7:30-11:30=3.5+3.5+4=11hrs)
 
 * generating random adfs and evaluating whether they use all their arguments
 * generating the RPF using the same adf routines and the adfs themselves.  A little tangent that
