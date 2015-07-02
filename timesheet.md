@@ -1,10 +1,16 @@
 # Timesheet
 
+## Fri 3 Jul (9:30-
 
-## Thur 2 Jul (9:00-11:00, 1:00-
+
+## Thur 2 Jul (8:30-11:00, 1:00-2:00, 4:00-6:30, 8:00-9:30)
 
 * cleaned up the typed random adf generation and pushed out a notebook for it
 * regenerate the signature if growing fails repeatedly
+* add adfs to urns of random input/output selections
+* for loops and if_then_else implementations... running into questions about type: what type does an if-then-else
+   return if the two working branches are different types? What type is a working branch which has not been
+   evaluated yet?
 
 ## Wed 1 Jul (8:30-1:00,  -1hr, 3:30-7, 7:30-11:30=3.5+3.5+4=11hrs)
 

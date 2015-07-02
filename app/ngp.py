@@ -18,14 +18,37 @@ class Baseset(object):
     # min, max number of input arguments to adfs
     nargs = (1, 5)
 
-    def __init__(self, primitives):
+    def __init__(self):
         """
         :param primitives: a list of primitives as tuples (func, intypes, outtype)
         Eg. (operator.add, [int, int], int)
         """
-        self.primitives = primitives
+        # collection of primitives
+        self.primitives = []
+        # collection of ephemerals
+        self.ephemerals = []
+        # collection of terminals
+        self.terminals = []
         # collection of psets; one for each ADF.
         self.psets = []
+
+    def addPrimitive(self, primitive, in_types, ret_type, name=None):
+        """
+        Same as for DEAPs PrimitiveSetTyped
+        """
+        self.primitives.append((primitive, in_types, ret_type, name))
+
+    def addTerminal(self, terminal, ret_type, name=None):
+        """
+        Same as for DEAPs PrimitiveSetTyped
+        """
+        self.terminals.append((terminal, ret_type, name))
+
+    def addEphemeralConstant(self, name, ephemeral, ret_type):
+        """
+        Same as for DEAPs PrimitiveSetTyped
+        """
+        self.ephemerals.append((name, ephemeral, ret_type))
 
     def get_random_outtype(self):
         urn = list()
@@ -55,6 +78,10 @@ class Baseset(object):
     def getPrimitiveSet(self, name, intypes, outtype, prefix):
         """Return a deap primitive set corresponding to the base prims and any added adfs"""
         pset = PrimitiveSetTyped(name, intypes, outtype, prefix)
+        for term in self.terminals:
+            pset.addTerminal(term[0], term[1], term[2])
+        for ephe in self.ephemerals:
+            pset.addEphemeralConstant(ephe[0], ephe[1], ephe[2])
         for prim in self.primitives:
             pset.addPrimitive(prim[0], prim[1], prim[2])
         for adfset in self.psets:
