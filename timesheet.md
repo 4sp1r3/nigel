@@ -1,7 +1,23 @@
 # Timesheet
 
-## Fri 3 Jul (9:30-
+## Fri 3 Jul (9:30-12:30, 3-6:30, 8-9pm)
 
+* playing around with matrix inputs/outputs and does the typing actually work? Is it something we want?
+* found 'bug' in our grow function: failure to grow a specific signature would just change the signature, something
+   we don't want to occur on the RPB
+* tried wrapping the matrix type in a class so we can pass them around as types.  But they still won't evaluate:
+   deap evaluates programs by converting them to a string, then passing the string to python and saying "run this".
+   Complex objects—ones that cannot be passed by converting to and from a string—don't seem amenable to this type
+   of compilation.  Seeking a better understanding or way around it.
+* checked pete's original code, his evaluations didn't run either for the same reasons... 
+   Ouch, took me an awful long time to reach the same blockage point 8-/
+* One way might be to take the 'ant' approach where, rather than trying to output a number-or array-we have an
+   object and the output is a series of operations on that object. ie: move left, go forward. So we might 'rotate
+   head to left', 'move vertex 192, 2 units to the right'.  That kind of thing.
+* The rolls royce solution would be to ditch DEAP and implement a more granular language parser in which the nodes
+   of our tree are not just functions and values, but expressions and flow controls as well.  Something I've looked
+   long at aka in python as AST (abstract symbol tree) which allows us to manipulate actual python code; removing
+   the constraints of DEAP's approach which limits us to purely functional primitive nodes.
 
 ## Thur 2 Jul (8:30-11:00, 1:00-2:00, 4:00-6:30, 8:00-9:30)
 
