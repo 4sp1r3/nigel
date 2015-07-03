@@ -3,7 +3,9 @@ import random
 from deap.gp import PrimitiveSetTyped
 from deap.gp import PrimitiveTree
 from deap.gp import compileADF
-from app.ourMods import genGrow, DeadBranchError
+from app.ourMods import DeadBranchError
+from app.ourMods import genGrow
+#from deap.gp import genGrow
 
 
 class GrowException(Exception):
@@ -106,6 +108,8 @@ class Baseset(object):
         # maximum number of signatures to try before ultimately giving up
         max_signature_attempts = 1000
 
+        flexible_signature = (outtype == None and intypes == None)
+
         # pick an outtype
         if outtype is None:
             outtype = self.get_random_outtype()
@@ -119,6 +123,7 @@ class Baseset(object):
             for _ in range(max_grow_attempts):
                 try:
                     tree = PrimitiveTree(genGrow(pset, grow_max, outtype, prob=grow_term_pb))
+                    #tree = PrimitiveTree(genGrow(pset, 2, 5, outtype))
                 except DeadBranchError:
                     continue
                 all_args_used = all([pset.mapping[arg] in tree for arg in pset.arguments])
@@ -126,14 +131,18 @@ class Baseset(object):
                     self.psets.append(pset)
                     return tree, pset
             else:
-                # try a different signature
-                outtype = self.get_random_outtype()
-                intypes = self.get_random_intypes()
-
-        # we tried but no valid tree could be grown
-        raise GrowException("No ADF tree could be grown after %s attempts with different ADF signatures, "
-                            "where %s attempts were made to grow within each signature. Please review your "
-                            "definitions of the primitives and retry" % (max_signature_attempts, max_grow_attempts))
+                if flexible_signature:
+                    # try a different signature
+                    outtype = self.get_random_outtype()
+                    intypes = self.get_random_intypes()
+                else:
+                    raise GrowException("Despite trying %s times unable to grow specified signature %s -> %s ." %
+                                        (max_grow_attempts, intypes, outtype))
+        else:
+            # we tried but no valid tree could be grown
+            raise GrowException("No ADF tree could be grown after %s attempts with different ADF signatures, "
+                                "where %s attempts were made to grow within each signature. Please review your "
+                                "definitions of the primitives and retry" % (max_signature_attempts, max_grow_attempts))
 
 
 class Individual(object):
@@ -164,7 +173,9 @@ class Individual(object):
             self.routines.append(baseset.addFunction(name))
 
         # generate the RPB
-        self.routines.append(baseset.addFunction("MAIN", self.intypes, self.outtype, prefix='IN'))
+        self.routines.append(
+            baseset.addFunction("MAIN", self.intypes, self.outtype, prefix='IN')
+        )
 
     def evaluate(self, *args):
         trees, psets = zip(*self.routines)
