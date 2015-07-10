@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from deap.gp import graph as gph
-from deap.gp import PrimitiveTree, Primitive
+from deap.gp import Primitive
 from deap.tools import Logbook
 
 
@@ -202,10 +202,10 @@ def genGrow(pset, max_, type_=None, prob=0.30):
             return expr
         except DeadBranchError:
             # ok, this prim is no good, but press on and try others
-            pass
-
-    # exhausted all terminals and primitives
-    raise DeadBranchError("Neither primitives nor terminals of type '%s' could be found" % type_)
+            continue
+    else:
+        # exhausted all terminals and primitives
+        raise DeadBranchError("Neither primitives nor terminals of type '%s' could be found" % type_)
 
 
 def selProbablistic(individuals, k):

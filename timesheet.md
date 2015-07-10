@@ -1,6 +1,30 @@
 # Timesheet
 
-## Fri 3 Jul (9:30-12:30, 3-6:30, 8-9pm)
+## Thu 9 Jul (9-12, 3:30-5:00=4.5)
+
+* new strategy; it's only the empheral that's causing issues, and the initial construction of it at that, so
+   alter the way it works in deap such that it is a 'symbolic' terminal.
+* That works. We create a new terminal whenever an Ephemeral is called for and put it's value into the context so
+   it can be refered to as a variable.
+* A bit of tooing-froing about when new ephemeral instances should be generated. I have it adding them as terminals,
+   currently, so the existing ones could be used, or a new one could be created? Something like that?
+
+## Wed 8 Jul (10-12, 3-6:30=5.5)
+
+* ok, I'm writing strings, but how to read them back? __repr__ and __str__ on numpy behave oddly, as do __new__ and
+   __init__; probably because they're C routines underneath
+* going nowhere... idea #39: create a Terminal and poke values into the evaluation context, or #40 do some
+   funky string replace sort of variable implementation?
+* blew out deap's compile routines, looking again at exactly how these guys are evaluating
+
+## Tues 7 Jul (3:30-6.30, 9-10:30=4.5)
+
+* push ahead trying to stringify everything into functions and making up type tokens.
+* bah. default load/dump pickle routines includes carriage returns which stuffs up the lambdas.
+* banged around between bytes, and str's, and encodings, internal representations, and hell in general, kinda
+   getting there, but never actually getting there.
+
+## Fri 3 Jul (9:30-12:30, 3-6:30, 8-9pm=7.5)
 
 * playing around with matrix inputs/outputs and does the typing actually work? Is it something we want?
 * found 'bug' in our grow function: failure to grow a specific signature would just change the signature, something
@@ -19,7 +43,7 @@
    long at aka in python as AST (abstract symbol tree) which allows us to manipulate actual python code; removing
    the constraints of DEAP's approach which limits us to purely functional primitive nodes.
 
-## Thur 2 Jul (8:30-11:00, 1:00-2:00, 4:00-6:30, 8:00-9:30)
+## Thur 2 Jul (8:30-11:00, 1:00-2:00, 4:00-6:30, 8:00-9:30=1.5+2.5+1+2.5=7.5)
 
 * cleaned up the typed random adf generation and pushed out a notebook for it
 * regenerate the signature if growing fails repeatedly

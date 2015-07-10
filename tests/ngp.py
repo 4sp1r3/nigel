@@ -19,7 +19,7 @@ class NGPTestCase(unittest.TestCase):
         for prim in [
             (operator.add, [int, int], float),
             (operator.sub, [float, float], int),
-            #(nor, [bool, bool], bool),
+            # (nor, [bool, bool], bool),
         ]:
             bset.addPrimitive(*prim)
 
@@ -68,6 +68,7 @@ class NGPTestCase(unittest.TestCase):
 import types
 import random
 from functools import partial
+
 
 class ProgramTestCase(unittest.TestCase):
     def test_program(self):
@@ -120,36 +121,6 @@ class ProgramTestCase(unittest.TestCase):
         print(prog.evaluate(1, 2))
         print(prog.evaluate(3, 4))
 
-    def test_matrix(self):
-        """play with matrixes"""
-        class Matrix(object):
-            shape = (2,2)
-            def __init__(self):
-                self.value = np.random.rand(*self.shape)
-            def __get__(self, instance, owner):
-                return self.value
-            def __set__(self, instance, value):
-                self.value = value
-            def __repr__(self):
-                return "Matrix(\'%s\')" % self.value
-
-
-        bset = Baseset()
-        bset.addEphemeralConstant(str(uuid.uuid4()), lambda: Matrix(), Matrix)
-        bset.addPrimitive(operator.add, [Matrix, Matrix], Matrix)
-
-        ind = Individual(bset, [Matrix], Matrix)
-
-        for tree, pset in ind.routines:
-            print(pset.name, ":")
-            print(pset.ins, '->', pset.ret)
-            print(tree)
-            print()
-
-        m = np.random.rand(1, 3)
-        print("M:", m)
-        print("R:", ind.evaluate(m))
-
     def test_integers(self):
         """play with matrixes"""
         bset = Baseset()
@@ -169,7 +140,7 @@ class ProgramTestCase(unittest.TestCase):
         print("R:", ind.evaluate(m))
 
     def test_more_integers(self):
-        """why doesn't it respect the types we're telling it to use?"""
+        """Does it respect the types we're telling it to use?"""
         primset = [
             (operator.add, [int, int], int),
             # (operator.sub, [int, float], int),
@@ -185,3 +156,27 @@ class ProgramTestCase(unittest.TestCase):
             print("       ", tree)
         print('Score:', prog.evaluate(2, 1.0))
         print('-----\n\n')
+
+
+class MatrixTestCase(unittest.TestCase):
+
+    def test_matrix(self):
+        """play with matrixes"""
+        bset = Baseset()
+        bset.addEphemeralConstant('EMatrix1', lambda: np.random.rand(2, 2), np.ndarray)
+        bset.addEphemeralConstant('EMatrix2', lambda: np.random.rand(2, 2), np.ndarray)
+        bset.addPrimitive(operator.add, [np.ndarray, np.ndarray], np.ndarray)
+        bset.addPrimitive(operator.sub, [np.ndarray, np.ndarray], np.ndarray)
+
+        ind = Individual(bset, [np.ndarray], np.ndarray)
+
+        m = np.random.rand(2, 2)
+        print("M:", m, '\n')
+
+        for tree, pset in ind.routines:
+            print(pset.name, ":", tree)
+            # print(pset.ins, '->', pset.ret)
+            # print('Terms:', [t.name for t in pset.terminals[np.ndarray]])
+
+        result = ind.evaluate(m)
+        print("\nR:", result)

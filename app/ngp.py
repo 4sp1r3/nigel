@@ -2,7 +2,6 @@ import random
 
 from deap.gp import PrimitiveSetTyped
 from deap.gp import PrimitiveTree
-from deap.gp import compileADF
 from app.ourMods import DeadBranchError
 from app.ourMods import genGrow
 #from deap.gp import genGrow
@@ -27,8 +26,10 @@ class Baseset(object):
         """
         # collection of primitives
         self.primitives = []
-        # collection of ephemerals
+        # collection of available ephemeral routines
         self.ephemerals = []
+        # dict of instantiated ephemerals
+        self.ephemeral_instances = {}
         # collection of terminals
         self.terminals = []
         # collection of psets; one for each ADF.
@@ -51,6 +52,16 @@ class Baseset(object):
         Same as for DEAPs PrimitiveSetTyped
         """
         self.ephemerals.append((name, ephemeral, ret_type))
+
+    def get_ephemeral_instance(self, idx):
+        """creates a new ephemeral and stores it and returns it
+        :param idx: the id of the ephemeral to instantiate
+        """
+        (name, func, ret) = self.ephemerals[idx]
+        name = 'E%s' % len(self.ephemeral_instances)
+        value = func()
+        self.ephemeral_instances[name] = value
+        return name, value
 
     def get_random_outtype(self):
         urn = list()
@@ -82,8 +93,9 @@ class Baseset(object):
         pset = PrimitiveSetTyped(name, intypes, outtype, prefix)
         for term in self.terminals:
             pset.addTerminal(term[0], term[1], term[2])
-        for ephe in self.ephemerals:
-            pset.addEphemeralConstant(ephe[0], ephe[1], ephe[2])
+        for idx in range(len(self.ephemerals)):
+            name, value = self.get_ephemeral_instance(idx)
+            pset.addTerminal(value, type(value), name)
         for prim in self.primitives:
             pset.addPrimitive(prim[0], prim[1], prim[2])
         for adfset in self.psets:
@@ -178,6 +190,18 @@ class Individual(object):
         )
 
     def evaluate(self, *args):
-        trees, psets = zip(*self.routines)
-        func = compileADF(trees, psets)
+        # removes deap's compile and compileADF so we can see what it's doing.
+        # for each routine, add previous routines to the context, codify the routine and call it,
+        #  then add it to the list of routines in context. Return the evaluated solution.
+        adfdict = {}
+        func = None
+        for subexpr, pset in self.routines:
+            pset.context.update(adfdict)
+            code = str(subexpr)
+            if len(pset.arguments) > 0:
+                adfargs = ",".join(arg for arg in pset.arguments)
+                code = "lambda {args}: {code}".format(args=adfargs, code=code)
+            func = eval(code, pset.context, {})
+            adfdict.update({pset.name: func})
+
         return func(*args)
