@@ -4,7 +4,6 @@ from deap.gp import PrimitiveSetTyped
 from deap.gp import PrimitiveTree
 from app.ourMods import DeadBranchError
 from app.ourMods import genGrow
-#from deap.gp import genGrow
 
 
 class GrowException(Exception):
@@ -14,11 +13,8 @@ class GrowException(Exception):
 
 class Baseset(object):
     """
-    Basic list of primitive functions to give to deap
+    Basic list of primitive functions granted to the problem
     """
-    # min, max number of input arguments to adfs
-    nargs = (1, 5)
-
     def __init__(self):
         """
         :param primitives: a list of primitives as tuples (func, intypes, outtype)
@@ -32,8 +28,6 @@ class Baseset(object):
         self.ephemeral_instances = {}
         # collection of terminals
         self.terminals = []
-        # collection of psets; one for each ADF.
-        self.psets = []
 
     def addPrimitive(self, primitive, in_types, ret_type, name=None):
         """
@@ -63,9 +57,30 @@ class Baseset(object):
         self.ephemeral_instances[name] = value
         return name, value
 
+
+class FunctionSet(object):
+    """
+    The set of functions of an individual
+    """
+    # min, max number of input arguments to adfs
+    nargs = (1, 5)
+
+    def __init__(self, baseset):
+        # a reference to the baseset of primitives, terminals and ephemerals
+        self.baseset = baseset
+        # a collection of function trees
+        self.trees = []
+        # collection of psets; one for each ADF.
+        self.psets = []
+
+    def __iter__(self):
+        """return pairs of tree/psets"""
+        for pair in zip(self.trees, self.psets):
+            yield pair
+
     def get_random_outtype(self):
         urn = list()
-        for prim in self.primitives:
+        for prim in self.baseset.primitives:
             urn.append(prim[2])
         for adf in self.psets:
             urn.append(adf.ret)
@@ -75,7 +90,7 @@ class Baseset(object):
         """Return a list of input types of random type and number"""
         # put all the input types in all the primitives into an urn
         urn = list()
-        for prim in self.primitives:
+        for prim in self.baseset.primitives:
             for intype in prim[1]:
                 urn.append(intype)
         for adf in self.psets:
@@ -88,28 +103,28 @@ class Baseset(object):
         # range the args from 0 to ensure they're contiguous
         return [random.choice(urn) for _ in range(nargcount)]
 
-    def getPrimitiveSet(self, name, intypes, outtype, prefix):
+    def get_primitive_set(self, name, intypes, outtype, prefix):
         """Return a deap primitive set corresponding to the base prims and any added adfs"""
         pset = PrimitiveSetTyped(name, intypes, outtype, prefix)
-        for term in self.terminals:
+        for term in self.baseset.terminals:
             pset.addTerminal(term[0], term[1], term[2])
-        for idx in range(len(self.ephemerals)):
-            name, value = self.get_ephemeral_instance(idx)
+        for idx in range(len(self.baseset.ephemerals)):
+            name, value = self.baseset.get_ephemeral_instance(idx)
             pset.addTerminal(value, type(value), name)
-        for prim in self.primitives:
+        for prim in self.baseset.primitives:
             pset.addPrimitive(prim[0], prim[1], prim[2])
         for adfset in self.psets:
             pset.addADF(adfset)
         return pset
 
-    def addFunction(self, name, intypes=None, outtype=None, prefix='A'):
+    def add_function(self, name, intypes=None, outtype=None, prefix='A'):
         """
         Create and add a new function
         :param name: a unique name for the function (or non-unique if that's a deliberate intention)
         :param intypes: list of input types
         :param outtype: the output type
         :param prefix: label for the input terminals
-        :return: a tuple of the grown tree and the pset used to produce it
+        :return: undefined
         """
         # maximum size to grow the tree initially
         grow_max = 5
@@ -120,7 +135,7 @@ class Baseset(object):
         # maximum number of signatures to try before ultimately giving up
         max_signature_attempts = 1000
 
-        flexible_signature = (outtype == None and intypes == None)
+        flexible_signature = (outtype is None and intypes is None)
 
         # pick an outtype
         if outtype is None:
@@ -131,17 +146,17 @@ class Baseset(object):
             intypes = self.get_random_intypes()
 
         for _ in range(max_signature_attempts):
-            pset = self.getPrimitiveSet(name, intypes, outtype, prefix)
+            pset = self.get_primitive_set(name, intypes, outtype, prefix)
             for _ in range(max_grow_attempts):
                 try:
                     tree = PrimitiveTree(genGrow(pset, grow_max, outtype, prob=grow_term_pb))
-                    #tree = PrimitiveTree(genGrow(pset, 2, 5, outtype))
                 except DeadBranchError:
                     continue
                 all_args_used = all([pset.mapping[arg] in tree for arg in pset.arguments])
                 if all_args_used and len(tree) > 1:
                     self.psets.append(pset)
-                    return tree, pset
+                    self.trees.append(tree)
+                    return
             else:
                 if flexible_signature:
                     # try a different signature
@@ -169,12 +184,11 @@ class Individual(object):
         :param intypes: list of input types
         :param outtype: the output type
         """
-        self.baseset = baseset
         self.intypes = intypes
         self.outtype = outtype
 
         # the primitive trees that make up this program
-        self.routines = []
+        self.funcset = FunctionSet(baseset)
 
         # randomly decide the number of adfs
         nADFs = random.choice(list(range(self.max_adfs)))
@@ -182,12 +196,10 @@ class Individual(object):
         # generate the adfs
         for idx in range(nADFs):
             name = 'ADF%s' % idx
-            self.routines.append(baseset.addFunction(name))
+            self.funcset.add_function(name)
 
         # generate the RPB
-        self.routines.append(
-            baseset.addFunction("MAIN", self.intypes, self.outtype, prefix='IN')
-        )
+        self.funcset.add_function("MAIN", self.intypes, self.outtype, prefix='IN')
 
     def evaluate(self, *args):
         # removes deap's compile and compileADF so we can see what it's doing.
@@ -195,7 +207,7 @@ class Individual(object):
         #  then add it to the list of routines in context. Return the evaluated solution.
         adfdict = {}
         func = None
-        for subexpr, pset in self.routines:
+        for subexpr, pset in self.funcset:
             pset.context.update(adfdict)
             code = str(subexpr)
             if len(pset.arguments) > 0:

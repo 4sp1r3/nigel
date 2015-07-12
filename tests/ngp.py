@@ -4,6 +4,7 @@ import uuid
 import numpy as np
 
 from app.ngp import Baseset
+from app.ngp import FunctionSet
 from app.ngp import Individual
 
 
@@ -86,7 +87,7 @@ class ProgramTestCase(unittest.TestCase):
         intypes = [int, float]
         outtype = float
         prog = Individual(bset, intypes, outtype)
-        for tree, pset in prog.routines:
+        for tree, pset in prog.funcset:
             print(pset.name, ":", pset.ins, '->', pset.ret)
             print("       ", tree)
         print(prog.evaluate(1, 1.0))
@@ -111,7 +112,7 @@ class ProgramTestCase(unittest.TestCase):
         # bset.addPrimitive(part, [types.FunctionType, object, object], types.FunctionType)
 
         prog = Individual(bset, [int, int], int)
-        for tree, pset in prog.routines:
+        for tree, pset in prog.funcset:
             print(pset.name, ":")
             print(pset.ins, '->', pset.ret)
             print(tree)
@@ -129,7 +130,7 @@ class ProgramTestCase(unittest.TestCase):
 
         ind = Individual(bset, [int], int)
 
-        for tree, pset in ind.routines:
+        for tree, pset in ind.funcset:
             print(pset.name, ":")
             print(pset.ins, '->', pset.ret)
             print(tree)
@@ -151,7 +152,7 @@ class ProgramTestCase(unittest.TestCase):
             baseset.addPrimitive(*prim)
 
         prog = Individual(baseset, [int, int], int)
-        for tree, pset in prog.routines:
+        for tree, pset in prog.funcset:
             print(pset.name, ":", pset.ins, '->', pset.ret)
             print("       ", tree)
         print('Score:', prog.evaluate(2, 1.0))
@@ -173,10 +174,17 @@ class MatrixTestCase(unittest.TestCase):
         m = np.random.rand(2, 2)
         print("M:", m, '\n')
 
-        for tree, pset in ind.routines:
+        for tree, pset in ind.funcset:
             print(pset.name, ":", tree)
             # print(pset.ins, '->', pset.ret)
             # print('Terms:', [t.name for t in pset.terminals[np.ndarray]])
 
         result = ind.evaluate(m)
         print("\nR:", result)
+
+        ind2 = Individual(bset, [np.ndarray], np.ndarray)
+
+        for tree, pset in ind2.funcset:
+            print(pset.name, ":", tree)
+        result2 = ind2.evaluate(m)
+        print("\nR:", result2)

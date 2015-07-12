@@ -1,5 +1,17 @@
 # Timesheet
 
+## Sun 12 Jul (2-4pm)
+
+* isolate the global problem baseset by implementing a local FunctionSet class over the top.
+
+## Fri 10 Jul (10:00-1:00pm)
+
+* phaffing, cleaning up the ephemerals. Discussing problem of global empherals vs local functions in the face
+   of crossovers.
+* trying to work out how to do it
+
+# INVOICE 7 (June 30-July 9)
+
 ## Thu 9 Jul (9-12, 3:30-5:00=4.5)
 
 * new strategy; it's only the empheral that's causing issues, and the initial construction of it at that, so
