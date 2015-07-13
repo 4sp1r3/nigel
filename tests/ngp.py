@@ -112,7 +112,13 @@ class ProgramTestCase(unittest.TestCase):
         # bset.addPrimitive(part, [types.FunctionType, object, object], types.FunctionType)
 
         prog = Individual(bset, [int, int], int)
+        prog2 = Individual(bset, [int, int], int)
         for tree, pset in prog.funcset:
+            print(pset.name, ":")
+            print(pset.ins, '->', pset.ret)
+            print(tree)
+            print()
+        for tree, pset in prog2.funcset:
             print(pset.name, ":")
             print(pset.ins, '->', pset.ret)
             print(tree)
@@ -188,3 +194,4 @@ class MatrixTestCase(unittest.TestCase):
             print(pset.name, ":", tree)
         result2 = ind2.evaluate(m)
         print("\nR:", result2)
+

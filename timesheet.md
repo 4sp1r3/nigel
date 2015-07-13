@@ -1,5 +1,14 @@
 # Timesheet
 
+## Mon 13 Jul (10-1, 3-6:30, 8-10=8.5)
+
+* putting together another pythagoras solver, shoehorning in some numpy arrays
+* been quite a while since we did a complete problem, much has changed.  Adapting to the new paradigm (and
+   yet again balancing which bits of deap to discard/keep)
+* lots of fiddling around to reapply everything (regeneration, mate, mutate, even cloning)
+   because the structure of trees/psets has changed considerably since untyped unrandom pythagoras
+* got so far as running without the notebook, abeit not very sensibly
+
 ## Sun 12 Jul (2-4pm)
 
 * isolate the global problem baseset by implementing a local FunctionSet class over the top.

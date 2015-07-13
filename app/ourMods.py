@@ -197,7 +197,7 @@ def genGrow(pset, max_, type_=None, prob=0.30):
     for prim in primitives:
         try:
             expr = [prim]
-            for arg in reversed(prim.args):
+            for arg in prim.args:
                 expr += genGrow(pset, max_ - 1, arg, prob)
             return expr
         except DeadBranchError:
