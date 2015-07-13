@@ -4,7 +4,7 @@ from functools import partial
 from inspect import isclass
 
 from deap.gp import PrimitiveTree
-from deap.gp import PrimitiveSet
+from deap.gp import PrimitiveSet, PrimitiveSetTyped
 from deap.gp import compileADF
 from deap.gp import mutUniform
 from deap.base import Fitness
@@ -202,6 +202,33 @@ def selProbablistic(individuals, k):
         return selected
 
 
+class ProgramTree(object):
+    """A tree of functions"""
+    adf_range = range(0, 3)
+    adf_nargs = range(1, 3)
+
+    def __init__(self, intypes, outtype, fset):
+        self.fset = fset
+        self.intypes = intypes
+        self.outtype = outtype
+
+        # create some ADFS
+        self.ADFS = [self._add_adf() for _ in self.adf_range]
+
+        # create the RPB
+        self.RPB = Branch(intypes, outtype, fset)
+
+    def _add_adf(self):
+        # work out the signature
+        outtype = type(random.choice(self.fset.random_node()))
+        intypes = [type(random.choice(self.fset.random_node())) for _ in random.choice(self.adf_nargs)]
+        # work out the fset - add arguments and other adfs
+        adfset = copy.deepcopy(self.fset)
+        for i, typ in enumerate(intypes):
+            adfset.add_variable('A%d' % i, typ)
+        return Branch(intypes, outtype, adfset)
+
+
 class Branch(list):
     """A set of nodes that use a FunctionSet to produce a result.  A combination of deap PrimitiveSet
      and PrimitiveTree."""
@@ -251,6 +278,24 @@ class Function(object):
         return self.symbol
 
 
+class DummyTerminal(object):
+    def __init__(self, name):
+        self.name = name
+        self.value = None
+
+    def __repr__(self):
+        return self.__get__(self, None)
+
+    def __set__(self, instance, value):
+        instance.value = value
+
+    def __get__(self, instance, owner):
+        if instance.value is None:
+            return instance.name
+        else:
+            return instance.value
+
+
 class FunctionSet(object):
     # a set of terminals
     terminals = set()
@@ -268,6 +313,10 @@ class FunctionSet(object):
     def add_terminal(self, value):
         """Add a terminal to the set"""
         self.terminals.add(value)
+
+    def add_dummy(self, name):
+        """Add a dummy terminal to the set"""
+        self.terminals.add(DummyTerminal(name))
 
     def add_primitive(self, func, intypes, outtype, symbol):
         """Add a primitive function to the set"""
@@ -298,32 +347,21 @@ class FunctionSet(object):
     def grow(self, type_, terminal_pb=0.5, max_=5):
         """return a list of nodes"""
         if max_ <= 1 or terminal_pb >= random.random() or not len(self.primitives_of_type(type_)):
-            return [self.random_terminal(type_)]
+            return [Terminal(self.random_terminal(type_), False, type_)]
         else:
             prim = self.random_primitive(type_)
-            expr = [prim]
+            expr = [Primitive(prim.func.__name__, prim.intypes, prim.outtype)]
             for argtype in reversed(prim.intypes):
                 expr += self.grow(argtype, terminal_pb, max_-1)
             return expr
 
-
-
-
-
-# class ProgramTree(object):
-#     """A tree of functions"""
-#     def __init__(self, function_set):
-#         self.fset = function_set
-#         self.ptree =
-#
-#     def grow(self, root=None):
-#         """Return a tree using this function set"""
-#         if root is None:
-#             # start with with a terminal
-#             return self.random_terminal()
-#         else:
-#             # push terminal down by adding a new function and terminals
-#             pass
+    def to_pset(self, name, intypes_, outtype):
+        pset = PrimitiveSetTyped(name, intypes_, outtype)
+        for term in self.terminals:
+            pset.addTerminal(term, type(term))
+        for prim in self.primitives:
+            pset.addPrimitive(prim.func, prim.intypes, prim.outtype, prim.func.__name__)
+        return pset
 
 
 # def genGrow(pset, max_, type_=None, prob=0.30):

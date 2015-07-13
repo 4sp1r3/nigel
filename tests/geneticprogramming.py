@@ -5,6 +5,8 @@ from app.ourMods import adfdraw
 from app.geneticprogramming import Individual
 from app.geneticprogramming import FunctionSet
 from app.geneticprogramming import Branch
+from app.geneticprogramming import ProgramTree
+from app.geneticprogramming import DummyTerminal
 
 
 def nor(a, b):
@@ -13,10 +15,19 @@ def nor(a, b):
 
 class FunctionSetTestCase(unittest.TestCase):
 
+    def test_dummys(self):
+        arg0 = DummyTerminal('arg0')
+        print(arg0)
+        print(type(arg0))
+        arg0 = 10
+        print(arg0)
+
     def test_functionset(self):
         fset = FunctionSet()
         fset.add_primitive(nor, [bool, bool], bool, '^')
         fset.add_primitive(operator.add, [int, int], int, '+')
+
+
         fset.add_terminal(False)
         fset.add_terminal(True)
         fset.add_terminal(12)
@@ -33,6 +44,17 @@ class FunctionSetTestCase(unittest.TestCase):
         twig = fset.grow(int)
         print(twig)
 
+        from deap.gp import PrimitiveTree, compile
+        tree = PrimitiveTree(twig)
+        print(tree)
+
+        pset = fset.to_pset('main', [int, int], int)
+        print('pset: ', pset)
+        func = compile(tree, pset)
+        print('fun: ', type(func))
+        print('more:', func)
+        print('still:', func(10, 10))
+
 
 class BranchTestCase(unittest.TestCase):
     def setUp(self):
@@ -45,6 +67,20 @@ class BranchTestCase(unittest.TestCase):
     def test_branch(self):
         branch = Branch([bool, bool], bool, self.fset)
         print(branch)
+
+
+class ProgramTestCase(unittest.TestCase):
+    def setUp(self):
+        fset = FunctionSet()
+        fset.add_primitive(nor, [bool, bool], bool, '^')
+        fset.add_terminal(False)
+        fset.add_terminal(True)
+        self.fset = fset
+
+    def test_program(self):
+        prog = ProgramTree(self.fset)
+
+
 
 
 class IndividualTestCase(unittest.TestCase):
