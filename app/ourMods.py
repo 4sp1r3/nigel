@@ -278,9 +278,9 @@ def adfdraw(individual):
     """
     PROGN = 'PROGN'
     expr = []
-    for num, branch in enumerate(individual[:-1]):
+    for num, branch in enumerate(individual.funcset.trees[:-1]):
         expr = expr + ['F%s' % num] + branch
-    expr += ['RPB'] + individual[-1]
+    expr += ['RPB'] + individual.funcset.trees[-1]
     nodes = list(range(len(expr)))
     edges = list()
     labels = dict()
@@ -301,7 +301,7 @@ def adfdraw(individual):
         if hasattr(node, 'arity'):
             stack.append([i, node.arity])
         elif node == PROGN:
-            stack.append([i, len(individual)])
+            stack.append([i, len(individual.funcset.trees[-1])])
         else:
             stack.append([i, 1])
 
@@ -313,12 +313,12 @@ def adfdraw(individual):
     graph.add_edges_from(edges)
     pos = nx.graphviz_layout(graph, prog="dot")
 
-    figsize = (25, max([i.height for i in individual]) + 2)
+    figsize = (25, max([i.height for i in individual.funcset.trees]) + 2)
     fig = plt.figure(figsize=figsize)
     fig.suptitle("Score {:2.4f}".format(individual.fitness.values[0]), fontsize=16, y=0.05)
     fig.text(0.0, 0.05, "\n".join(
-        ["{}".format(individual.signature)] +
-        ["{} ({})".format(k, v.arity) for k, v in sorted(individual.psets[-1].mapping.items())]
+        #["{}".format(individual.signature)] +
+        ["{} ({})".format(k, v.arity) for k, v in sorted(individual.funcset.psets[-1].mapping.items())]
     ))
     nx.draw_networkx_nodes(graph, pos, node_size=900, node_color="w")
     nx.draw_networkx_edges(graph, pos)

@@ -367,9 +367,7 @@ class Population(list):
 
             # decide how to alter this individual
             rand = random.random()
-            if rand < self.MATE_MUTATE_CLONE[0]:
-
-                # MATE/CROSSOVER
+            if rand < self.MATE_MUTATE_CLONE[0]:  # MATE/CROSSOVER
                 for _ in range(0, self.MAX_MATE_ATTEMPTS):
                     try:
                         receiver, contributor = self.select(2)
@@ -378,20 +376,16 @@ class Population(list):
                         break
                     except Individual.NoMateException:
                         pass
-                else:
-                    child = self.select(1)  # fallback to a clone if we can't successfully mate
+                else:  # fallback to a clone if we can't successfully mate
+                    child = self.select(1)
                     print("No mate after %s attempts." % self.MAX_MATE_ATTEMPTS)
 
-            elif rand < (self.MATE_MUTATE_CLONE[0] + self.MATE_MUTATE_CLONE[1]):
-
-                # MUTATE
+            elif rand < (self.MATE_MUTATE_CLONE[0] + self.MATE_MUTATE_CLONE[1]):  # MUTATE
                 ind = self.select(1)
                 child = ind.clone()
                 child.mutate()
 
-            else:
-
-                # CLONE
+            else:  # CLONE
                 child = self.select(1)
 
             offspring.append(child)
