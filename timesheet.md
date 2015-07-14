@@ -1,12 +1,16 @@
 # Timesheet
 
-## Tues 14 Jul (9-1:30,
+## Tues 14 Jul (9-1:30,2:30-6:30,10-11p)
 
 * create a notebook for matrix-pythagoras. not working yet, but might push it up to give nige something to look
    at again. Done.
 * combined everything back into one—removing imports from ourMods
 * migrated FunctionSet functionality into Individual and removed it
 * refactor everything into the "geneticprogramming" app
+* rework the mutate routine, so that it actually works, and resets the score
+* reworking the mate routine... hard! working out how to ensure the receiver knows what all the nodes are, but
+   taking into account the exceptions (ephemerals, rpb or adf)
+* worked out an is_compatible routine for checking crossover slices
 
 ## Mon 13 Jul (10-1, 3-6:30, 8-10=8.5)
 

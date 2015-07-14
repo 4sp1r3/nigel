@@ -7,6 +7,7 @@ import networkx as nx
 from deap.gp import PrimitiveSetTyped
 from deap.gp import PrimitiveTree
 from deap.gp import Primitive
+from deap.gp import Terminal
 from deap.base import Fitness
 
 from geneticprogramming import NoMateException
@@ -49,6 +50,8 @@ class Individual(object):
     GROWTH_MAX_ATTEMPTS = 50
     # maximum number of signatures to try before ultimately giving up
     GROWTH_MAX_SIGNATURES = 1000
+    # All ephemerals must start with this
+    EPHEMERAL_PREFIX = 'E'
 
     def __init__(self, baseset):
         """
@@ -234,7 +237,9 @@ class Individual(object):
 
     def mutate(self):
         """
-        change a random node by growing a new bit of tree there
+        Change a random node by growing a new bit of tree there
+        Yes, it could replace the root node of a subtree.
+        Yes, it will happily replace a slice with an identical slice. Especially nodes.
         """
         # pick a subtree to mutate
         idx = random.choice(range(len(self.trees)))
@@ -246,56 +251,83 @@ class Individual(object):
         type_ = subtree[index].ret
 
         # grow from that node
-        subtree[slice_] = self.grow(subpset, self.GROWTH_MAX_MUT_DEPTH, type_=type_)
+        mutation = self.grow(subpset, self.GROWTH_MAX_MUT_DEPTH, type_=type_)
+        # print(slice_, [n.name for n in subtree[slice_]], [n.name for n in mutation])
+        subtree[slice_] = mutation
+        del self.fitness.values
 
-    def mate(self, contributor):
+    @staticmethod
+    def is_compatible(node, pset):
+        """
+        True if the node will make sense within the pset's context
+        :param node: a node
+        :param pset: a deap PrimitiveSetTyped
+        :return: true/false
+        """
+        # ephemeral
+        if isinstance(node, Terminal) and node.name[:1] == Individual.EPHEMERAL_PREFIX:
+            return True
+
+        # same name and type then no problem
+        try:
+            pnode = pset.mapping[node.name]
+            if node.ret == pnode.ret and type(node) == type(pnode):
+                return True
+        except KeyError:
+            pass
+
+        return False
+
+    def find_slice(self, nodetype, pset):
+        """
+        Returns a slice compatible with nodetype and pset, or error
+        :param nodetype: the type that the slice needs to return
+        :param pset: the set of nodes the receiver knows of; don't use anything not in here
+          Excepting Ephemerals—using unknown emphemerals is permitted.
+        """
+        # collect all possible contributor nodes
+        # TODO: perhaps create an iterator/enumerator for this operation
+        branch_nodes = [(b, n) for b in range(len(self.trees)) for n in range(len(self.trees[b]))]
+        random.shuffle(branch_nodes)
+
+        # try every node for a valid contribution
+        for ibranch, inode in branch_nodes:
+
+            # if root node has wrong return type
+            if self.trees[ibranch][inode].ret != nodetype:
+                continue
+
+            # resolve to candidate slice
+            candidate_slice = self.trees[ibranch].searchSubtree(inode)
+            candidate_nodes = self.trees[ibranch][candidate_slice]
+
+            if all([Individual.is_compatible(node, pset) for node in candidate_nodes]):
+                return candidate_nodes
+
+        # the receiving node is wholly incompatible with the contributor
+        return None
+
+    def mate(self, other):
         """
         Cut a compatible branch off the contributor and stick it somewhere here
+        Yes, they'll happily exchange identical slices.
         """
         # collect all possible receiving nodes
-        r_nodes = [(b, n) for b in range(len(self.trees)) for n in range(len(self.trees[b]))]
-        random.shuffle(r_nodes)
+        branch_nodes = [(b, n) for b in range(len(self.trees)) for n in range(len(self.trees[b]))]
+        random.shuffle(branch_nodes)
 
-        # collect all possible contributor nodes
-        c_nodes = [(b, n) for b in range(len(contributor.trees)) for n in range(len(contributor.trees[b]))]
-        random.shuffle(c_nodes)
-
-        def get_compatible_slice(rnode, rpset):
-            """
-            returns a slice of the contributer which fits the receiving type and pset,
-            or None
-            """
-            for cbranch, cnode in c_nodes:
-
-                # reject swapping nodes that don't match
-                if contributor.trees[cbranch][cnode] != rnode:
-                    continue
-
-                # reject if adfs in contributed nodes have a different signature
-                candidate_slice = contributor.trees[cbranch].searchSubtree(cnode)
-                candidate_nodes = contributor.trees[cbranch][candidate_slice]
-
-                # all the signatures match
-                # FIXME: what about the ephemerals!? So what are we checking for nowadays?!
-                try:
-                    if all([subnode == rpset.mapping[subnode.name] for subnode in candidate_nodes]):
-                        return cbranch, candidate_slice
-                except KeyError:
-                    continue
-
-            # the receiving node is wholly incompatible with the contributor
-            return None, None
-
-        for rbranch, rnode in r_nodes:
-            cbranch, cslice = get_compatible_slice(self.trees[rbranch][rnode], self.psets[rbranch])
-            if cbranch is not None:
-                break
-
-        if cbranch is None or cslice is None:
-            raise NoMateException()
-
-        pruned_slice = self.trees[rbranch].searchSubtree(rnode)
-        self.trees[rbranch][pruned_slice] = contributor.trees[cbranch][cslice]
+        for ibranch, inode in branch_nodes:
+            nodetype = self.trees[ibranch][inode].ret
+            contribution = other.find_slice(nodetype, self.psets[ibranch])
+            if contribution is not None:
+                pruned_slice = self.trees[ibranch].searchSubtree(inode)
+                print(":Prune:", [n.name for n in self.trees[ibranch][pruned_slice]])
+                print(":Place:", [n.name for n in contribution])
+                self.trees[ibranch][pruned_slice] = contribution
+                del self.fitness.values
+                return
+        else:
+            raise NoMateException("Exhausted all possible nodes on both individuals without finding a mate.")
 
     def compile(self):
         # removes deap's compile and compileADF so we can see what it's doing.
