@@ -1,21 +1,33 @@
 import copy
 import random
 import numpy as np
+from inspect import isclass
 from functools import partial
+import matplotlib.pyplot as plt
+import networkx as nx
 
 from deap.gp import PrimitiveSetTyped
 from deap.gp import PrimitiveTree
+from deap.gp import Primitive
 from deap.gp import mutUniform
 from deap.base import Fitness
 from deap.tools import Statistics
 from deap.tools import HallOfFame
 from deap.tools import Logbook
-from app.ourMods import DeadBranchError
-from app.ourMods import genGrow
-from app.ourMods import selProbablistic
+
 
 class GrowException(Exception):
     """Tried a bunch of times but could not grow a suitable tree from the given primitives"""
+    pass
+
+
+class DeadBranchError(Exception):
+    """Could not grow a tree.
+    Probably because there are no nodes of the required type available"""
+    pass
+
+class NoMateException(Exception):
+    """Unsuccessful in finding a compatible mate for an individual"""
     pass
 
 
@@ -66,10 +78,20 @@ class Baseset(object):
         return name, value
 
 
-class FunctionSet(object):
+class FitnessMin(Fitness):
+    weights = (-1.0,)
+
+
+class Individual(object):
     """
-    The set of functions of an individual
+    An (individual) program of a random number of adfs and a Result Producing Branch (RPB)
     """
+    # A list of input types
+    INTYPES = NotImplemented
+    # The output type
+    OUTTYPE = NotImplemented
+    # The maximum number of ADFs to generate
+    MAX_ADFS = 4
     # min, max number of input arguments to adfs
     ADF_NARGS = (1, 5)
     # Probability of terminal when growing:
@@ -84,12 +106,33 @@ class FunctionSet(object):
     GROWTH_MAX_SIGNATURES = 1000
 
     def __init__(self, baseset):
+        """
+        :param baseset: a Baseset object with the primitives already loaded
+        """
         # a reference to the baseset of primitives, terminals and ephemerals
         self.baseset = baseset
         # a collection of function trees
         self.trees = []
-        # collection of psets; one for each ADF.
+        # collection of psets; one for each tree
         self.psets = []
+
+        # randomly decide the number of adfs
+        nADFs = random.choice(list(range(self.MAX_ADFS + 1)))
+
+        # generate the adfs
+        for idx in range(nADFs):
+            name = 'F%s' % idx
+            self.add_function(name)
+
+        # generate the RPB
+        self.add_function("MAIN", self.INTYPES, self.OUTTYPE, prefix='IN')
+
+        # attach a fitness
+        self.fitness = FitnessMin()
+
+    def __str__(self):
+        """describe this in english"""
+        return "\n".join([pset.name + ":" + str(tree) for tree, pset in self])
 
     def __iter__(self):
         """return pairs of tree/psets"""
@@ -122,7 +165,9 @@ class FunctionSet(object):
         return [random.choice(urn) for _ in range(nargcount)]
 
     def get_primitive_set(self, name, intypes, outtype, prefix):
-        """Return a deap primitive set corresponding to the base prims and any added adfs"""
+        """
+        Return a deap primitive set corresponding to the base prims and any added adfs
+        """
         pset = PrimitiveSetTyped(name, intypes, outtype, prefix)
         for term in self.baseset.terminals:
             pset.addTerminal(term[0], term[1], term[2])
@@ -134,6 +179,58 @@ class FunctionSet(object):
         for adfset in self.psets:
             pset.addADF(adfset)
         return pset
+
+    def grow(self, pset, max_, type_=None, prob=0.30):
+        """Generate an expression tree.
+        Branches can be of any height, provided they are not more than *max*.
+
+        :param pset: Primitive set from which primitives are selected.
+        :param max_: Maximum height of the produced tree.
+        :param prob: 0..1 the probability of a terminal (vs primitive) being placed at a node.
+        :param type_: The type that the tree should return when called.
+        :returns: An expression tree.
+        """
+
+        def random_terminal():
+            terminals = pset.terminals[type_]
+            if len(terminals) == 0:
+                raise DeadBranchError("No terminal of type '%s' is available" % type_)
+            else:
+                term = random.choice(terminals)
+                # and if it's actually a class then instantiate it
+                if isclass(term):
+                    term = term()
+                return [term]
+
+        if type_ is None:
+            type_ = pset.ret
+
+        # we're at the maximum depth, or there are no primitives to try
+        if max_ <= 1 or not len(pset.primitives[type_]):
+            return random_terminal()
+
+        # if chance dictates, return a terminal, if you can
+        try:
+            if random.random() < prob:
+                return random_terminal()
+        except DeadBranchError:
+            # No problem, press on, we'll try the prims.
+            pass
+
+        primitives = pset.primitives[type_].copy()
+        random.shuffle(primitives)
+        for prim in primitives:
+            try:
+                expr = [prim]
+                for arg in prim.args:
+                    expr += self.grow(pset, max_ - 1, arg, prob)
+                return expr
+            except DeadBranchError:
+                # ok, this prim is no good, but press on and try others
+                continue
+        else:
+            # exhausted all terminals and primitives
+            raise DeadBranchError("Neither primitives nor terminals of type '%s' could be found" % type_)
 
     def add_function(self, name, intypes=None, outtype=None, prefix='A'):
         """
@@ -161,7 +258,7 @@ class FunctionSet(object):
             pset = self.get_primitive_set(name, intypes, outtype, prefix)
             for _ in range(self.GROWTH_MAX_ATTEMPTS):
                 try:
-                    tree = PrimitiveTree(genGrow(pset, self.GROWTH_MAX_INIT_DEPTH, outtype, prob=self.GROWTH_TERM_PB))
+                    tree = PrimitiveTree(self.grow(pset, self.GROWTH_MAX_INIT_DEPTH, outtype, prob=self.GROWTH_TERM_PB))
                 except DeadBranchError:
                     continue
                 all_args_used = all([pset.mapping[arg] in tree for arg in pset.arguments])
@@ -182,11 +279,15 @@ class FunctionSet(object):
             raise GrowException("No ADF tree could be grown after %s attempts with different ADF signatures, "
                                 "where %s attempts were made to grow within each signature. Please review your "
                                 "definitions of the primitives and retry" % (
-                self.GROWTH_MAX_SIGNATURES, self.GROWTH_MAX_ATTEMPTS))
+                                    self.GROWTH_MAX_SIGNATURES, self.GROWTH_MAX_ATTEMPTS))
+
+    def clone(self):
+        """returns a copy of oneself"""
+        return copy.deepcopy(self)
 
     def mutate(self):
         """pick a random node and cut/grow a new bit of tree there"""
-        mut_expr = partial(genGrow, max_=self.GROWTH_MAX_MUT_DEPTH, prob=self.GROWTH_TERM_PB)
+        mut_expr = partial(self.grow, max_=self.GROWTH_MAX_MUT_DEPTH, prob=self.GROWTH_TERM_PB)
         tree = random.choice(range(len(self.trees)))
         self.trees[tree] = mutUniform(self.trees[tree], expr=mut_expr, pset=self.psets[tree])[0]
 
@@ -218,7 +319,7 @@ class FunctionSet(object):
                 candidate_nodes = contributor.trees[cbranch][candidate_slice]
 
                 # all the signatures match
-                #FIXME: what about the ephemerals!? So what are we checking for nowadays?!
+                # FIXME: what about the ephemerals!? So what are we checking for nowadays?!
                 try:
                     if all([subnode == rpset.mapping[subnode.name] for subnode in candidate_nodes]):
                         return (cbranch, candidate_slice)
@@ -234,64 +335,10 @@ class FunctionSet(object):
                 break
 
         if cbranch is None or cslice is None:
-            raise self.NoMateException()
+            raise NoMateException()
 
         pruned_slice = self.trees[rbranch].searchSubtree(rnode)
         self.trees[rbranch][pruned_slice] = contributor.trees[cbranch][cslice]
-
-
-class FitnessMin(Fitness):
-    weights = (-1.0,)
-
-
-class Individual(object):
-    """
-    An (individual) program of a random number of adfs and a Result Producing Branch (RPB)
-    """
-    # A list of input types
-    INTYPES = NotImplemented
-    # The output type
-    OUTTYPE = NotImplemented
-    # The maximum number of ADFs to generate
-    MAX_ADFS = 4
-
-    class NoMateException(Exception):
-        pass
-
-    def __init__(self, baseset):
-        """
-        :param baseset: a Baseset object with the primitives already loaded
-        """
-        # the primitive trees that make up this program
-        self.funcset = FunctionSet(baseset)
-
-        # randomly decide the number of adfs
-        nADFs = random.choice(list(range(self.MAX_ADFS + 1)))
-
-        # generate the adfs
-        for idx in range(nADFs):
-            name = 'ADF%s' % idx
-            self.funcset.add_function(name)
-
-        # generate the RPB
-        self.funcset.add_function("MAIN", self.INTYPES, self.OUTTYPE, prefix='IN')
-
-        # attach a fitness
-        self.fitness = FitnessMin()
-
-    def __str__(self):
-        """describe this in english"""
-        return "\n".join([pset.name + ":" + str(tree) for tree, pset in self.funcset])
-
-    def clone(self):
-        """returns a copy of oneself"""
-        return copy.deepcopy(self)
-
-    def mutate(self):
-        self.funcset.mutate()
-
-    def mate(self, contributor):
-        self.funcset.mate(contributor.funcset)
 
     def compile(self):
         # removes deap's compile and compileADF so we can see what it's doing.
@@ -299,7 +346,7 @@ class Individual(object):
         #  then add it to the list of routines in context. Return the evaluated solution.
         adfdict = {}
         func = None
-        for subexpr, pset in self.funcset:
+        for subexpr, pset in self:
             pset.context.update(adfdict)
             code = str(subexpr)
             if len(pset.arguments) > 0:
@@ -311,6 +358,60 @@ class Individual(object):
 
     def evaluate(self, *args):
         raise NotImplementedError()
+
+    def draw(self):
+        """
+        Draws a node tree of an adf individual
+        """
+        PROGN = 'PROGN'
+        expr = []
+        for num, branch in enumerate(self.trees[:-1]):
+            expr = expr + ['F%s' % num] + branch
+        expr += ['RPB'] + self.trees[-1]
+        nodes = list(range(len(expr)))
+        edges = list()
+        labels = dict()
+
+        stack = []
+        for i, node in enumerate(expr):
+            if stack:
+                edges.append((stack[-1][0], i))
+                stack[-1][1] -= 1
+
+            if isinstance(node, Primitive):
+                labels[i] = node.name
+            elif hasattr(node, 'value'):
+                labels[i] = node.value
+            else:
+                labels[i] = str(node)
+
+            if hasattr(node, 'arity'):
+                stack.append([i, node.arity])
+            elif node == PROGN:
+                stack.append([i, len(self.trees[-1])])
+            else:
+                stack.append([i, 1])
+
+            while stack and stack[-1][1] == 0:
+                stack.pop()
+
+        graph = nx.Graph()
+        graph.add_nodes_from(nodes)
+        graph.add_edges_from(edges)
+        pos = nx.graphviz_layout(graph, prog="dot")
+
+        figsize = (25, max([i.height for i in self.trees]) + 2)
+        fig = plt.figure(figsize=figsize)
+        fig.suptitle("Score {:2.4f}".format(self.fitness.values[0]), fontsize=16, y=0.05)
+        fig.text(0.0, 0.05, "\n".join(
+            # ["{}".format(individual.signature)] +
+            ["{} ({})".format(k, v.arity) for k, v in sorted(self.psets[-1].mapping.items())]
+        ))
+        nx.draw_networkx_nodes(graph, pos, node_size=900, node_color="w")
+        nx.draw_networkx_edges(graph, pos)
+        nx.draw_networkx_labels(graph, pos, labels)
+        plt.axis("off")
+        plt.show()
 
 
 class Population(list):
@@ -341,8 +442,44 @@ class Population(list):
         self.hof = HallOfFame(1)
         self.generation = 0
 
-    def select(self, n):
-        return selProbablistic(self, n)
+    def select(self, k):
+        """Probablistic select *k* individuals among the input *individuals*. The
+        list returned contains references to the input *individuals*.
+
+        :param individuals: A list of individuals to select from.
+        :param k: The number of individuals to select.
+        :returns: A list containing k individuals.
+
+        The individuals returned are randomly selected from individuals according
+        to their fitness such that the more fit the individual the more likely
+        that individual will be chosen.  Less fit individuals are less likely, but
+        still possibly, selected.
+        """
+        # adjusted pop is a list of tuples (adjusted fitness, individual)
+        adjusted_pop = [(1.0 / (1.0 + i.fitness.values[0]), i) for i in self]
+
+        # normalised_pop is a list of tuples (float, individual) where the float indicates
+        # a 'share' of 1.0 that the individual deserves based on it's fitness relative to
+        # the other individuals. It is sorted so the best chances are at the front of the list.
+        denom = sum([fit for fit, ind in adjusted_pop])
+        normalised_pop = [(fit / denom, ind) for fit, ind in adjusted_pop]
+        normalised_pop = sorted(normalised_pop, key=lambda x: x[0], reverse=True)
+
+        # randomly select with a fitness bias
+        # FIXME: surely this can be optimized?
+        selected = []
+        for x in range(k):
+            rand = random.random()
+            accumulator = 0.0
+            for share, ind in normalised_pop:
+                accumulator += share
+                if rand <= accumulator:
+                    selected.append(ind)
+                    break
+        if len(selected) == 1:
+            return selected[0]
+        else:
+            return selected
 
     def evolve(self):
         """
@@ -374,8 +511,8 @@ class Population(list):
                         child = receiver.clone()
                         child.mate(contributor)
                         break
-                    except Individual.NoMateException:
-                        pass
+                    except NoMateException:
+                        raise
                 else:  # fallback to a clone if we can't successfully mate
                     child = self.select(1)
                     print("No mate after %s attempts." % self.MAX_MATE_ATTEMPTS)

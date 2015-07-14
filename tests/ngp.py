@@ -1,11 +1,12 @@
 import operator
 import unittest
+import math
 import uuid
 import numpy as np
 
 from app.ngp import Baseset
-from app.ngp import FunctionSet
 from app.ngp import Individual
+from app.ngp import Population
 
 
 def nor(a, b):
@@ -195,3 +196,59 @@ class MatrixTestCase(unittest.TestCase):
         result2 = ind2.evaluate(m)
         print("\nR:", result2)
 
+    def test_pythagoras_matrix(self):
+        """copy of the notebook (originally)"""
+
+        # setup the training data
+        SAMPLE_SIZE = 50
+        PLANE_SIZE = 20.0
+        RANDOMPOINTS = [PLANE_SIZE * np.random.random_sample((1, 2)) for _ in range(SAMPLE_SIZE)]
+
+        # setup the baseset
+        def getValue(ndarray, idx):
+            """Return the indexed value from the 1x2 numpy array"""
+            return ndarray[0][idx]
+
+
+        square = lambda x: x ** 2
+        sqrt = lambda x: math.sqrt(abs(x))
+
+        bset = Baseset()
+        bset.addEphemeralConstant('P', lambda: random.randint(0, 1), int)
+        bset.addPrimitive(getValue, [np.ndarray, int], float, name="get")
+        bset.addPrimitive(operator.add, [float, float], float, name="add")
+        bset.addPrimitive(operator.sub, [float, float], float, name="sub")
+        bset.addPrimitive(square, [float], float, name="square")
+        bset.addPrimitive(sqrt, [float], float, name="sqrt")
+
+
+        # setup the individuals
+        Individual.INTYPES = [np.ndarray]
+        Individual.OUTTYPE = float
+
+
+        def evaluate(individual):
+            """sum of application of all the random points"""
+            program = individual.compile()
+            score = 0
+            try:
+                for point in RANDOMPOINTS:
+                    program_distance = program(point)
+                    true_distance = math.hypot(point[0][0], point[0][1])
+                    score += abs(true_distance - program_distance)
+            except (OverflowError, RuntimeWarning):
+                pass
+            if math.isnan(score) or score == 0:
+                score = float('inf')
+            return score,
+        Individual.evaluate = evaluate
+
+        # run the evolution
+        NUM_GENERATIONS = 5
+
+        population = Population(bset)
+        for generation in range(NUM_GENERATIONS):
+            population.evolve()
+
+        best = population[0]
+        best.draw()

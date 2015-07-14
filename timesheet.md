@@ -1,10 +1,11 @@
 # Timesheet
 
-## Tues 14 Jul (9-
+## Tues 14 Jul (9-12,
 
 * create a notebook for matrix-pythagoras. not working yet, but might push it up to give nige something to look
-   at again.
-
+   at again. Done.
+* combined everything back into one—removing imports from ourMods
+* migrated FunctionSet functionality into Individual and removed it
 
 ## Mon 13 Jul (10-1, 3-6:30, 8-10=8.5)
 
