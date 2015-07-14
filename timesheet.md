@@ -1,11 +1,12 @@
 # Timesheet
 
-## Tues 14 Jul (9-12,
+## Tues 14 Jul (9-1:30,
 
 * create a notebook for matrix-pythagoras. not working yet, but might push it up to give nige something to look
    at again. Done.
 * combined everything back into one—removing imports from ourMods
 * migrated FunctionSet functionality into Individual and removed it
+* refactor everything into the "geneticprogramming" app
 
 ## Mon 13 Jul (10-1, 3-6:30, 8-10=8.5)
 

@@ -4,9 +4,9 @@ import math
 import uuid
 import numpy as np
 
-from app.ngp import Baseset
-from app.ngp import Individual
-from app.ngp import Population
+from geneticprogramming import Individual
+from geneticprogramming import Population
+from geneticprogramming import Baseset
 
 
 def nor(a, b):
@@ -23,7 +23,7 @@ class NGPTestCase(unittest.TestCase):
             (operator.sub, [float, float], int),
             # (nor, [bool, bool], bool),
         ]:
-            bset.addPrimitive(*prim)
+            bset.add_primitive(*prim)
 
         # declare adfs
         for n in range(5):
@@ -47,7 +47,7 @@ class NGPTestCase(unittest.TestCase):
         for n in range(num):
             baseset = Baseset()
             for prim in bset:
-                baseset.addPrimitive(*prim)
+                baseset.add_primitive(*prim)
             tree, pset = baseset.addFunction('TST%s' % n)
             print(len(pset.ins), pset.ins, '->', pset.ret)
             print(tree)
@@ -61,7 +61,7 @@ class NGPTestCase(unittest.TestCase):
         ]
         baseset = Baseset()
         for prim in bset:
-            baseset.addPrimitive(*prim)
+            baseset.add_primitive(*prim)
         for idx in range(5):
             tree, pset = baseset.addFunction('TST%s' % idx, [int, int], float, prefix='IN')
             print(tree, pset.mapping.keys())
@@ -84,7 +84,7 @@ class ProgramTestCase(unittest.TestCase):
             (operator.mul, [float, float], float),
             (operator.mul, [int, int], int),
         ]:
-            bset.addPrimitive(*prim)
+            bset.add_primitive(*prim)
         intypes = [int, float]
         outtype = float
         prog = Individual(bset, intypes, outtype)
@@ -106,10 +106,10 @@ class ProgramTestCase(unittest.TestCase):
                 return part2()
 
         bset = Baseset()
-        bset.addEphemeralConstant(str(uuid.uuid4()), lambda: random.randint(0, 10), int)
-        bset.addPrimitive(operator.gt, [int, int], bool)
-        bset.addPrimitive(operator.add, [int, int], int)
-        bset.addPrimitive(ifthenelse, [bool, types.FunctionType, types.FunctionType], object)
+        bset.add_ephemeral(str(uuid.uuid4()), lambda: random.randint(0, 10), int)
+        bset.add_primitive(operator.gt, [int, int], bool)
+        bset.add_primitive(operator.add, [int, int], int)
+        bset.add_primitive(ifthenelse, [bool, types.FunctionType, types.FunctionType], object)
         # bset.addPrimitive(part, [types.FunctionType, object, object], types.FunctionType)
 
         prog = Individual(bset, [int, int], int)
@@ -132,8 +132,8 @@ class ProgramTestCase(unittest.TestCase):
     def test_integers(self):
         """play with matrixes"""
         bset = Baseset()
-        bset.addEphemeralConstant(str(uuid.uuid4()), lambda: np.random.rand(1, 3), np.ndarray)
-        bset.addPrimitive(operator.add, [int, int], int)
+        bset.add_ephemeral(str(uuid.uuid4()), lambda: np.random.rand(1, 3), np.ndarray)
+        bset.add_primitive(operator.add, [int, int], int)
 
         ind = Individual(bset, [int], int)
 
@@ -156,7 +156,7 @@ class ProgramTestCase(unittest.TestCase):
         ]
         baseset = Baseset()
         for prim in primset:
-            baseset.addPrimitive(*prim)
+            baseset.add_primitive(*prim)
 
         prog = Individual(baseset, [int, int], int)
         for tree, pset in prog.funcset:
@@ -171,10 +171,10 @@ class MatrixTestCase(unittest.TestCase):
     def test_matrix(self):
         """play with matrixes"""
         bset = Baseset()
-        bset.addEphemeralConstant('EMatrix1', lambda: np.random.rand(2, 2), np.ndarray)
-        bset.addEphemeralConstant('EMatrix2', lambda: np.random.rand(2, 2), np.ndarray)
-        bset.addPrimitive(operator.add, [np.ndarray, np.ndarray], np.ndarray)
-        bset.addPrimitive(operator.sub, [np.ndarray, np.ndarray], np.ndarray)
+        bset.add_ephemeral('EMatrix1', lambda: np.random.rand(2, 2), np.ndarray)
+        bset.add_ephemeral('EMatrix2', lambda: np.random.rand(2, 2), np.ndarray)
+        bset.add_primitive(operator.add, [np.ndarray, np.ndarray], np.ndarray)
+        bset.add_primitive(operator.sub, [np.ndarray, np.ndarray], np.ndarray)
 
         ind = Individual(bset, [np.ndarray], np.ndarray)
 
@@ -214,18 +214,18 @@ class MatrixTestCase(unittest.TestCase):
         sqrt = lambda x: math.sqrt(abs(x))
 
         bset = Baseset()
-        bset.addEphemeralConstant('P', lambda: random.randint(0, 1), int)
-        bset.addPrimitive(getValue, [np.ndarray, int], float, name="get")
-        bset.addPrimitive(operator.add, [float, float], float, name="add")
-        bset.addPrimitive(operator.sub, [float, float], float, name="sub")
-        bset.addPrimitive(square, [float], float, name="square")
-        bset.addPrimitive(sqrt, [float], float, name="sqrt")
+        bset.add_ephemeral('P', lambda: random.randint(0, 1), int)
+        bset.add_primitive(getValue, [np.ndarray, int], float, name="get")
+        bset.add_primitive(operator.add, [float, float], float, name="add")
+        bset.add_primitive(operator.sub, [float, float], float, name="sub")
+        bset.add_primitive(square, [float], float, name="square")
+        bset.add_primitive(sqrt, [float], float, name="sqrt")
 
 
         # setup the individuals
         Individual.INTYPES = [np.ndarray]
         Individual.OUTTYPE = float
-
+        Individual.MAX_ADFS = 1
 
         def evaluate(individual):
             """sum of application of all the random points"""
@@ -244,11 +244,14 @@ class MatrixTestCase(unittest.TestCase):
         Individual.evaluate = evaluate
 
         # run the evolution
-        NUM_GENERATIONS = 5
+        NUM_GENERATIONS = 1
+        Population.CLONE_BEST = 0
+        Population.POPULATION_SIZE = 1
+        Population.MATE_MUTATE_CLONE = (0, 100, 0)
 
         population = Population(bset)
         for generation in range(NUM_GENERATIONS):
             population.evolve()
 
-        best = population[0]
-        best.draw()
+        # best = population[0]
+        # best.draw()

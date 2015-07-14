@@ -1,19 +1,15 @@
 import copy
 import random
-import numpy as np
 from inspect import isclass
-from functools import partial
 import matplotlib.pyplot as plt
 import networkx as nx
 
 from deap.gp import PrimitiveSetTyped
 from deap.gp import PrimitiveTree
 from deap.gp import Primitive
-from deap.gp import mutUniform
 from deap.base import Fitness
-from deap.tools import Statistics
-from deap.tools import HallOfFame
-from deap.tools import Logbook
+
+from geneticprogramming import NoMateException
 
 
 class GrowException(Exception):
@@ -25,57 +21,6 @@ class DeadBranchError(Exception):
     """Could not grow a tree.
     Probably because there are no nodes of the required type available"""
     pass
-
-class NoMateException(Exception):
-    """Unsuccessful in finding a compatible mate for an individual"""
-    pass
-
-
-class Baseset(object):
-    """
-    Basic list of primitive functions granted to the problem
-    """
-    def __init__(self):
-        """
-        :param primitives: a list of primitives as tuples (func, intypes, outtype)
-        Eg. (operator.add, [int, int], int)
-        """
-        # collection of primitives
-        self.primitives = []
-        # collection of available ephemeral routines
-        self.ephemerals = []
-        # dict of instantiated ephemerals
-        self.ephemeral_instances = {}
-        # collection of terminals
-        self.terminals = []
-
-    def addPrimitive(self, primitive, in_types, ret_type, name=None):
-        """
-        Same as for DEAPs PrimitiveSetTyped
-        """
-        self.primitives.append((primitive, in_types, ret_type, name))
-
-    def addTerminal(self, terminal, ret_type, name=None):
-        """
-        Same as for DEAPs PrimitiveSetTyped
-        """
-        self.terminals.append((terminal, ret_type, name))
-
-    def addEphemeralConstant(self, name, ephemeral, ret_type):
-        """
-        Same as for DEAPs PrimitiveSetTyped
-        """
-        self.ephemerals.append((name, ephemeral, ret_type))
-
-    def get_ephemeral_instance(self, idx):
-        """creates a new ephemeral and stores it and returns it
-        :param idx: the id of the ephemeral to instantiate
-        """
-        (name, func, ret) = self.ephemerals[idx]
-        name = 'E%s' % len(self.ephemeral_instances)
-        value = func()
-        self.ephemeral_instances[name] = value
-        return name, value
 
 
 class FitnessMin(Fitness):
@@ -117,10 +62,10 @@ class Individual(object):
         self.psets = []
 
         # randomly decide the number of adfs
-        nADFs = random.choice(list(range(self.MAX_ADFS + 1)))
+        nadfs = random.choice(list(range(self.MAX_ADFS + 1)))
 
         # generate the adfs
-        for idx in range(nADFs):
+        for idx in range(nadfs):
             name = 'F%s' % idx
             self.add_function(name)
 
@@ -180,7 +125,7 @@ class Individual(object):
             pset.addADF(adfset)
         return pset
 
-    def grow(self, pset, max_, type_=None, prob=0.30):
+    def grow(self, pset, max_, type_=None, prob=None):
         """Generate an expression tree.
         Branches can be of any height, provided they are not more than *max*.
 
@@ -190,6 +135,8 @@ class Individual(object):
         :param type_: The type that the tree should return when called.
         :returns: An expression tree.
         """
+        if prob is None:
+            prob = self.GROWTH_TERM_PB
 
         def random_terminal():
             terminals = pset.terminals[type_]
@@ -254,9 +201,9 @@ class Individual(object):
             intypes = self.get_random_intypes()
 
         # (try to) grow a tree
-        for _ in range(self.GROWTH_MAX_SIGNATURES):
+        for signature in range(Individual.GROWTH_MAX_SIGNATURES):
             pset = self.get_primitive_set(name, intypes, outtype, prefix)
-            for _ in range(self.GROWTH_MAX_ATTEMPTS):
+            for attempt in range(self.GROWTH_MAX_ATTEMPTS):
                 try:
                     tree = PrimitiveTree(self.grow(pset, self.GROWTH_MAX_INIT_DEPTH, outtype, prob=self.GROWTH_TERM_PB))
                 except DeadBranchError:
@@ -286,10 +233,20 @@ class Individual(object):
         return copy.deepcopy(self)
 
     def mutate(self):
-        """pick a random node and cut/grow a new bit of tree there"""
-        mut_expr = partial(self.grow, max_=self.GROWTH_MAX_MUT_DEPTH, prob=self.GROWTH_TERM_PB)
-        tree = random.choice(range(len(self.trees)))
-        self.trees[tree] = mutUniform(self.trees[tree], expr=mut_expr, pset=self.psets[tree])[0]
+        """
+        change a random node by growing a new bit of tree there
+        """
+        # pick a subtree to mutate
+        idx = random.choice(range(len(self.trees)))
+        subtree, subpset = self.trees[idx], self.psets[idx]
+
+        # pick a node to mutate
+        index = random.randrange(len(subtree))
+        slice_ = subtree.searchSubtree(index)
+        type_ = subtree[index].ret
+
+        # grow from that node
+        subtree[slice_] = self.grow(subpset, self.GROWTH_MAX_MUT_DEPTH, type_=type_)
 
     def mate(self, contributor):
         """
@@ -322,12 +279,12 @@ class Individual(object):
                 # FIXME: what about the ephemerals!? So what are we checking for nowadays?!
                 try:
                     if all([subnode == rpset.mapping[subnode.name] for subnode in candidate_nodes]):
-                        return (cbranch, candidate_slice)
+                        return cbranch, candidate_slice
                 except KeyError:
                     continue
 
             # the receiving node is wholly incompatible with the contributor
-            return (None, None)
+            return None, None
 
         for rbranch, rnode in r_nodes:
             cbranch, cslice = get_compatible_slice(self.trees[rbranch][rnode], self.psets[rbranch])
@@ -363,7 +320,7 @@ class Individual(object):
         """
         Draws a node tree of an adf individual
         """
-        PROGN = 'PROGN'
+        progn = 'PROGN'
         expr = []
         for num, branch in enumerate(self.trees[:-1]):
             expr = expr + ['F%s' % num] + branch
@@ -387,7 +344,7 @@ class Individual(object):
 
             if hasattr(node, 'arity'):
                 stack.append([i, node.arity])
-            elif node == PROGN:
+            elif node == progn:
                 stack.append([i, len(self.trees[-1])])
             else:
                 stack.append([i, 1])
@@ -412,119 +369,3 @@ class Individual(object):
         nx.draw_networkx_labels(graph, pos, labels)
         plt.axis("off")
         plt.show()
-
-
-class Population(list):
-    """
-    A collection of individuals
-    """
-    INDIVIDUAL_CLASS = Individual
-    POPULATION_SIZE = 100
-    MAX_MUTATION_DEPTH = 2
-    CLONE_BEST = 5
-    MAX_MATE_ATTEMPTS = 10
-    MATE_MUTATE_CLONE = (80, 18, 2)
-
-    def __init__(self, baseset):
-        self.bset = baseset
-        pop = [self.INDIVIDUAL_CLASS(self.bset) for _ in range(self.POPULATION_SIZE)]
-        super(Population, self).__init__(pop)
-
-        self.stats = Statistics(lambda ind: ind.fitness.values)
-        self.stats.register("avg", np.mean)
-        self.stats.register("std", np.std)
-        self.stats.register("min", np.min)
-        self.stats.register("max", np.max)
-
-        self.logbook = Logbook()
-        self.logbook.header = ['gen'] + self.stats.fields
-
-        self.hof = HallOfFame(1)
-        self.generation = 0
-
-    def select(self, k):
-        """Probablistic select *k* individuals among the input *individuals*. The
-        list returned contains references to the input *individuals*.
-
-        :param individuals: A list of individuals to select from.
-        :param k: The number of individuals to select.
-        :returns: A list containing k individuals.
-
-        The individuals returned are randomly selected from individuals according
-        to their fitness such that the more fit the individual the more likely
-        that individual will be chosen.  Less fit individuals are less likely, but
-        still possibly, selected.
-        """
-        # adjusted pop is a list of tuples (adjusted fitness, individual)
-        adjusted_pop = [(1.0 / (1.0 + i.fitness.values[0]), i) for i in self]
-
-        # normalised_pop is a list of tuples (float, individual) where the float indicates
-        # a 'share' of 1.0 that the individual deserves based on it's fitness relative to
-        # the other individuals. It is sorted so the best chances are at the front of the list.
-        denom = sum([fit for fit, ind in adjusted_pop])
-        normalised_pop = [(fit / denom, ind) for fit, ind in adjusted_pop]
-        normalised_pop = sorted(normalised_pop, key=lambda x: x[0], reverse=True)
-
-        # randomly select with a fitness bias
-        # FIXME: surely this can be optimized?
-        selected = []
-        for x in range(k):
-            rand = random.random()
-            accumulator = 0.0
-            for share, ind in normalised_pop:
-                accumulator += share
-                if rand <= accumulator:
-                    selected.append(ind)
-                    break
-        if len(selected) == 1:
-            return selected[0]
-        else:
-            return selected
-
-    def evolve(self):
-        """
-        Return an evolved population
-        :returns: a population
-        """
-        # evaluate every individual
-        for ind in self:
-            if not len(ind.fitness.values):
-                ind.fitness.values = ind.evaluate()
-
-        self.logbook.record(gen=self.generation, **self.stats.compile(self))
-        self.hof.update(self)
-        print(self.logbook.stream)
-
-        # the best x of the population are cloned directly into the next generation
-        sorted_pop = sorted(self, key=lambda i: i.fitness.values[0])
-        offspring = sorted_pop[:self.CLONE_BEST]
-
-        # rest of the population clone, mate, or mutate at random
-        for idx in range(len(self) - self.CLONE_BEST):
-
-            # decide how to alter this individual
-            rand = random.random()
-            if rand < self.MATE_MUTATE_CLONE[0]:  # MATE/CROSSOVER
-                for _ in range(0, self.MAX_MATE_ATTEMPTS):
-                    try:
-                        receiver, contributor = self.select(2)
-                        child = receiver.clone()
-                        child.mate(contributor)
-                        break
-                    except NoMateException:
-                        raise
-                else:  # fallback to a clone if we can't successfully mate
-                    child = self.select(1)
-                    print("No mate after %s attempts." % self.MAX_MATE_ATTEMPTS)
-
-            elif rand < (self.MATE_MUTATE_CLONE[0] + self.MATE_MUTATE_CLONE[1]):  # MUTATE
-                ind = self.select(1)
-                child = ind.clone()
-                child.mutate()
-
-            else:  # CLONE
-                child = self.select(1)
-
-            offspring.append(child)
-        self[:] = offspring
-        self.generation += 1
