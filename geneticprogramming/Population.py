@@ -15,7 +15,6 @@ class Population(list):
     """
     INDIVIDUAL_CLASS = Individual
     POPULATION_SIZE = 100
-    MAX_MUTATION_DEPTH = 2
     CLONE_BEST = 5
     MAX_MATE_ATTEMPTS = 10
     MATE_MUTATE_CLONE = (80, 18, 2)
@@ -36,6 +35,10 @@ class Population(list):
 
         self.hof = HallOfFame(1)
         self.generation = 0
+
+        # do an initial evaluation
+        for ind in self:
+            ind.fitness.values = ind.evaluate()
 
     def select(self, k):
         """Probablistic select *k* individuals among the input *individuals*. The
@@ -77,14 +80,8 @@ class Population(list):
 
     def evolve(self):
         """
-        Return an evolved population
-        :returns: a population
+        Evolve this population by one generation
         """
-        # evaluate every individual
-        for ind in self:
-            if not len(ind.fitness.values):
-                ind.fitness.values = ind.evaluate()
-
         self.logbook.record(gen=self.generation, **self.stats.compile(self))
         self.hof.update(self)
         print(self.logbook.stream)
@@ -104,14 +101,7 @@ class Population(list):
                     try:
                         receiver, contributor = self.select(2)
                         child = receiver.clone()
-                        # print(":Contributor:")
-                        # print(contributor)
-                        # print(":Receiver:")
-                        # print(child)
                         child.mate(contributor)
-                        # print(":Mate:")
-                        # print(child)
-                        # print("\n")
                         break
                     except NoMateException as ex:
                         raise ex
@@ -130,3 +120,8 @@ class Population(list):
             offspring.append(child)
         self[:] = offspring
         self.generation += 1
+
+        # evaluate every individual
+        for ind in self:
+            if not len(ind.fitness.values):
+                ind.fitness.values = ind.evaluate()

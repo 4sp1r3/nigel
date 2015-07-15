@@ -350,6 +350,16 @@ class Individual(object):
     def evaluate(self, *args):
         raise NotImplementedError()
 
+    @property
+    def ephemerals_used(self):
+        """A dictionary of the ephemerals actually in use"""
+        used = dict()
+        for tree in self.trees:
+            for node in tree:
+                if node.name in self.baseset.ephemeral_instances:
+                    used[node.name] = self.baseset.ephemeral_instances[node.name]
+        return used
+
     def draw(self):
         """
         Draws a node tree of an adf individual
@@ -394,10 +404,17 @@ class Individual(object):
         figsize = (25, max([i.height for i in self.trees]) + 2)
         fig = plt.figure(figsize=figsize)
         fig.suptitle("Score {:2.4f}".format(self.fitness.values[0]), fontsize=16, y=0.05)
-        fig.text(0.0, 0.05, "\n".join(
-            # ["{}".format(individual.signature)] +
-            ["{} ({})".format(k, v.arity) for k, v in sorted(self.psets[-1].mapping.items())]
-        ))
+
+        # list the signatures fof the primitives
+        text = "\n".join(
+            ["{} ({})".format(k, v.arity) for k, v in sorted(self.psets[-1].mapping.items()) if isinstance(v, Primitive)]
+        )
+
+        # list the values of the ephemerals that get used
+        for k, v in self.ephemerals_used.items():
+            text += "\n{}: {}".format(k, v)
+
+        fig.text(0.0, 0.05, text)
         nx.draw_networkx_nodes(graph, pos, node_size=900, node_color="w")
         nx.draw_networkx_edges(graph, pos)
         nx.draw_networkx_labels(graph, pos, labels)
