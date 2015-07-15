@@ -341,6 +341,8 @@ class Individual(object):
             if len(pset.arguments) > 0:
                 adfargs = ",".join(arg for arg in pset.arguments)
                 code = "lambda {args}: {code}".format(args=adfargs, code=code)
+            context = pset.context
+            context.update(self.baseset.ephemeral_instances)
             func = eval(code, pset.context, {})
             adfdict.update({pset.name: func})
         return func
