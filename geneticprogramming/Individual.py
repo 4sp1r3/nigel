@@ -323,8 +323,6 @@ class Individual(object):
             contribution = other.find_slice(nodetype, self.psets[ibranch])
             if contribution is not None:
                 pruned_slice = self.trees[ibranch].searchSubtree(inode)
-                print(":Prune:", [n.name for n in self.trees[ibranch][pruned_slice]])
-                print(":Place:", [n.name for n in contribution])
                 self.trees[ibranch][pruned_slice] = contribution
                 del self.fitness.values
                 return

@@ -98,15 +98,23 @@ class Population(list):
 
             # decide how to alter this individual
             rand = random.random()
+
             if rand < self.MATE_MUTATE_CLONE[0]:  # MATE/CROSSOVER
                 for _ in range(0, self.MAX_MATE_ATTEMPTS):
                     try:
                         receiver, contributor = self.select(2)
                         child = receiver.clone()
+                        # print(":Contributor:")
+                        # print(contributor)
+                        # print(":Receiver:")
+                        # print(child)
                         child.mate(contributor)
+                        # print(":Mate:")
+                        # print(child)
+                        # print("\n")
                         break
-                    except NoMateException:
-                        raise
+                    except NoMateException as ex:
+                        raise ex
                 else:  # fallback to a clone if we can't successfully mate
                     child = self.select(1)
                     print("No mate after %s attempts." % self.MAX_MATE_ATTEMPTS)
@@ -114,12 +122,10 @@ class Population(list):
             elif rand < (self.MATE_MUTATE_CLONE[0] + self.MATE_MUTATE_CLONE[1]):  # MUTATE
                 ind = self.select(1)
                 child = ind.clone()
-                child.draw()
                 child.mutate()
-                child.draw()
 
             else:  # CLONE
-                child = self.select(1)
+                child = self.select(1).clone()
 
             offspring.append(child)
         self[:] = offspring

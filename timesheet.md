@@ -1,5 +1,11 @@
 # Timesheet
 
+## Wed 15 Jul (9:30-2:00, 5:00-
+
+* add ephemeral instances to the global/population context
+* crossover adfs with the same name/signature, but not those without, testing it does what I think it does.
+* do a bunch of runs, put the node counter back into the evaluation, post it up
+
 ## Tues 14 Jul (9-1:30,2:30-6:30,10-11p)
 
 * create a notebook for matrix-pythagoras. not working yet, but might push it up to give nige something to look
