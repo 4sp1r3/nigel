@@ -271,8 +271,10 @@ class Individual(object):
         # same name and type then no problem
         try:
             pnode = pset.mapping[node.name]
-            if node.ret == pnode.ret and type(node) == type(pnode):
-                return True
+            if isinstance(pnode, Primitive) and isinstance(node, Primitive):
+                return node.ret == pnode.ret and node.args == pnode.args
+            else:
+                return node.ret == pnode.ret and node.arity == pnode.arity
         except KeyError:
             pass
 

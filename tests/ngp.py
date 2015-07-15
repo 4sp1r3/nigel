@@ -166,6 +166,38 @@ class ProgramTestCase(unittest.TestCase):
         print('-----\n\n')
 
 
+from deap.gp import Primitive, Terminal, PrimitiveSetTyped
+
+class CrossoverTestCase(unittest.TestCase):
+    def test_iscompatible_adf(self):
+        """
+        Ensure the routine correctly distinguishes two ADF0s which have different input arguments
+        """
+        # two adfs, same name, different signatures
+        adf_int = PrimitiveSetTyped("ADF0", [int, float], float)
+        adf_float = PrimitiveSetTyped("ADF0", [float, float], int)
+
+        # two psets, one with the float adf, the other with the int adf
+        pset_int = PrimitiveSetTyped("MAIN", [float], bool)
+        pset_int.addADF(adf_int)
+        pset_float = PrimitiveSetTyped("MAIN", [float], bool)
+        pset_float.addADF(adf_float)
+
+        # the int adf is compatible with the int pset
+        self.assertTrue(Individual.is_compatible(pset_int.mapping["ADF0"], pset_int))
+        # the float adf is not compatible with the int pset
+        self.assertFalse(Individual.is_compatible(pset_float.mapping["ADF0"], pset_int))
+        # the float adf is compatible with the float pset
+        self.assertTrue(Individual.is_compatible(pset_float.mapping["ADF0"], pset_float))
+        # the int adf is not compatible with the float pset
+        self.assertFalse(Individual.is_compatible(pset_int.mapping["ADF0"], pset_float))
+
+        # the int pset has an unnamed float terminal
+        pset_int.addTerminal(0, int)
+        terms = [term for type_ in pset_int.terminals for term in pset_int.terminals[type_]]
+        self.assertTrue(all([Individual.is_compatible(term, pset_int) for term in terms]))
+
+
 class MatrixTestCase(unittest.TestCase):
 
     def test_matrix(self):
