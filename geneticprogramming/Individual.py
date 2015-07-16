@@ -18,9 +18,13 @@ class GrowException(Exception):
     pass
 
 
-class DeadBranchError(Exception):
-    """Could not grow a tree.
-    Probably because there are no nodes of the required type available"""
+class NoTerminalError(Exception):
+    """Could not grow a tree due to a lack of suitable terminal"""
+    pass
+
+
+class NoPrimitiveError(Exception):
+    """Could not grow a tree due to a lack of suitable primitives"""
     pass
 
 
@@ -128,7 +132,31 @@ class Individual(object):
             pset.addADF(adfset)
         return pset
 
-    def grow(self, pset, max_, type_=None, prob=None):
+    @staticmethod
+    def get_random_terminal(pset, type_):
+        """Return one of the terminals of type from the pset"""
+        terminals = pset.terminals[type_]
+        if len(terminals):
+            term = random.choice(terminals)
+            # and if it's actually a class then instantiate it
+            if isclass(term):
+                term = term()
+            return term
+        else:
+            raise NoTerminalError("No terminal of type '%s' is available" % type_)
+
+    @staticmethod
+    def get_random_primitive(pset, type_):
+        """Return one of the primitives of type from the pset"""
+        primitives = pset.primitives[type_]
+        if len(primitives):
+            primitive = random.choice(primitives)
+            return primitive
+        else:
+            raise NoPrimitiveError("No primitive of type '%s' is available" % type_)
+
+    @staticmethod
+    def grow(pset, max_, type_=None, prob=None):
         """Generate an expression tree.
         Branches can be of any height, provided they are not more than *max*.
 
@@ -139,48 +167,22 @@ class Individual(object):
         :returns: An expression tree.
         """
         if prob is None:
-            prob = self.GROWTH_TERM_PB
-
-        def random_terminal():
-            terminals = pset.terminals[type_]
-            if len(terminals) == 0:
-                raise DeadBranchError("No terminal of type '%s' is available" % type_)
-            else:
-                term = random.choice(terminals)
-                # and if it's actually a class then instantiate it
-                if isclass(term):
-                    term = term()
-                return [term]
+            prob = Individual.GROWTH_TERM_PB
 
         if type_ is None:
             type_ = pset.ret
 
-        # we're at the maximum depth, or there are no primitives to try
-        if max_ <= 1 or not len(pset.primitives[type_]):
-            return random_terminal()
+        # if maximum depth or no primitives or chance
+        if max_ <= 1 or random.random() < prob or not len(pset.primitives[type_]):
+            # return a random terminal
+            return [Individual.get_random_terminal(pset, type_)]
 
-        # if chance dictates, return a terminal, if you can
-        try:
-            if random.random() < prob:
-                return random_terminal()
-        except DeadBranchError:
-            # No problem, press on, we'll try the prims.
-            pass
-
-        primitives = pset.primitives[type_].copy()
-        random.shuffle(primitives)
-        for prim in primitives:
-            try:
-                expr = [prim]
-                for arg in prim.args:
-                    expr += self.grow(pset, max_ - 1, arg, prob)
-                return expr
-            except DeadBranchError:
-                # ok, this prim is no good, but press on and try others
-                continue
-        else:
-            # exhausted all terminals and primitives
-            raise DeadBranchError("Neither primitives nor terminals of type '%s' could be found" % type_)
+        # return a primitive and tree
+        prim = Individual.get_random_primitive(pset, type_)
+        expr = [prim]
+        for arg in prim.args:
+            expr += Individual.grow(pset, max_ - 1, arg, prob)
+        return expr
 
     def add_function(self, name, intypes=None, outtype=None, prefix='A'):
         """
@@ -208,14 +210,15 @@ class Individual(object):
             pset = self.get_primitive_set(name, intypes, outtype, prefix)
             for attempt in range(self.GROWTH_MAX_ATTEMPTS):
                 try:
-                    tree = PrimitiveTree(self.grow(pset, self.GROWTH_MAX_INIT_DEPTH, outtype, prob=self.GROWTH_TERM_PB))
-                except DeadBranchError:
+                    tree = PrimitiveTree(Individual.grow(pset, self.GROWTH_MAX_INIT_DEPTH, outtype, prob=self.GROWTH_TERM_PB))
+                    all_args_used = all([pset.mapping[arg] in tree for arg in pset.arguments])
+                    if all_args_used and len(tree) > 1:
+                        self.psets.append(pset)
+                        self.trees.append(tree)
+                        return
+                except (NoTerminalError, NoPrimitiveError):
+                    # try again
                     continue
-                all_args_used = all([pset.mapping[arg] in tree for arg in pset.arguments])
-                if all_args_used and len(tree) > 1:
-                    self.psets.append(pset)
-                    self.trees.append(tree)
-                    return
             else:
                 if flexible_signature:
                     # try a different signature
@@ -251,7 +254,7 @@ class Individual(object):
         type_ = subtree[index].ret
 
         # grow from that node
-        mutation = self.grow(subpset, self.GROWTH_MAX_MUT_DEPTH, type_=type_)
+        mutation = Individual.grow(subpset, self.GROWTH_MAX_MUT_DEPTH, type_=type_)
         # print(slice_, [n.name for n in subtree[slice_]], [n.name for n in mutation])
         subtree[slice_] = mutation
         del self.fitness.values

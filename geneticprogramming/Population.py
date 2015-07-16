@@ -87,8 +87,7 @@ class Population(list):
         print(self.logbook.stream)
 
         # the best x of the population are cloned directly into the next generation
-        sorted_pop = sorted(self, key=lambda i: i.fitness.values[0])
-        offspring = sorted_pop[:self.CLONE_BEST]
+        offspring = self[:self.CLONE_BEST]
 
         # rest of the population clone, mate, or mutate at random
         for idx in range(len(self) - self.CLONE_BEST):
@@ -121,7 +120,8 @@ class Population(list):
         self[:] = offspring
         self.generation += 1
 
-        # evaluate every individual
+        # evaluate every individual and sort
         for ind in self:
             if not len(ind.fitness.values):
                 ind.fitness.values = ind.evaluate()
+        self.sort(key=lambda i: i.fitness.values[0])

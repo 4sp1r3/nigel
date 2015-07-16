@@ -208,12 +208,14 @@ class MatrixTestCase(unittest.TestCase):
         bset.add_primitive(operator.add, [np.ndarray, np.ndarray], np.ndarray)
         bset.add_primitive(operator.sub, [np.ndarray, np.ndarray], np.ndarray)
 
-        ind = Individual(bset, [np.ndarray], np.ndarray)
+        Individual.INTYPES = [np.ndarray]
+        Individual.OUTTYPE = np.ndarray
+        ind = Individual(bset)
 
         m = np.random.rand(2, 2)
         print("M:", m, '\n')
 
-        for tree, pset in ind.funcset:
+        for tree, pset in zip(ind.trees, ind.psets):
             print(pset.name, ":", tree)
             # print(pset.ins, '->', pset.ret)
             # print('Terms:', [t.name for t in pset.terminals[np.ndarray]])
@@ -221,7 +223,9 @@ class MatrixTestCase(unittest.TestCase):
         result = ind.evaluate(m)
         print("\nR:", result)
 
-        ind2 = Individual(bset, [np.ndarray], np.ndarray)
+        Individual.INTYPES = [np.ndarray]
+        Individual.OUTTYPE = np.ndarray
+        ind2 = Individual(bset)
 
         for tree, pset in ind2.funcset:
             print(pset.name, ":", tree)
@@ -257,7 +261,7 @@ class MatrixTestCase(unittest.TestCase):
         # setup the individuals
         Individual.INTYPES = [np.ndarray]
         Individual.OUTTYPE = float
-        Individual.MAX_ADFS = 1
+
 
         def evaluate(individual):
             """sum of application of all the random points"""
@@ -271,19 +275,28 @@ class MatrixTestCase(unittest.TestCase):
             except (OverflowError, RuntimeWarning):
                 pass
             if math.isnan(score) or score == 0:
-                score = float('inf')
-            return score,
+                score = 100000
+            # accumulate the number of nodes actually used during a run by calling the adfs in the rpb
+            nodes = sum([len(tree) for tree in individual.trees])
+            modifier = 1 + (-2 ** - (nodes / 250))
+            return score + modifier,
         Individual.evaluate = evaluate
 
+
         # run the evolution
-        NUM_GENERATIONS = 1
-        Population.CLONE_BEST = 0
-        Population.POPULATION_SIZE = 1
-        Population.MATE_MUTATE_CLONE = (0, 100, 0)
+        Population.POPULATION_SIZE = 500  # Number of individuals in a generation
+        Population.MATE_MUTATE_CLONE = (70, 25, 5)  # ratio of individuals to mate, mutate, or clone
+        Population.CLONE_BEST = 1  # Number of best individuals to seed directly into offspring
+
+        Individual.MAX_ADFS = 4  # The maximum number of ADFs to generate
+        Individual.ADF_NARGS = (1, 5)  # min, max number of input arguments to adfs
+        Individual.GROWTH_TERM_PB = 0.3  # Probability of terminal when growing:
+        Individual.GROWTH_MAX_INIT_DEPTH = 10  # Maximum depth of initial growth
+        Individual.GROWTH_MAX_MUT_DEPTH = 5  # Maximum depth of mutation growth
 
         population = Population(bset)
-        for generation in range(NUM_GENERATIONS):
+        while population[0].fitness.values[0] >= 1.0:
             population.evolve()
 
-        # best = population[0]
-        # best.draw()
+        best = population[0]
+        best.draw()

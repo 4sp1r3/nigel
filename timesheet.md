@@ -1,10 +1,19 @@
 # Timesheet
 
-## Wed 15 Jul (9:30-2:00, 5:00-
+## Thu 16 Jul (9-12,2-
+
+* watched it run pythag matrix a whole bunch of times
+* working out specs for 'doloop' with nige in 10min bursts because the phones are bad
+* trying to isolate the problem with genGrow that sends it off in a spin sometimes
+* change the grow routine completely; simpler but raises errors more often
+* quick attempt to multiprocess failed quickly - the routines need to be pickleable
+
+## Wed 15 Jul (9:30-2:00, 5:00-7:00)
 
 * add ephemeral instances to the global/population context
 * crossover adfs with the same name/signature, but not those without, testing it does what I think it does.
 * do a bunch of runs, put the node counter back into the evaluation, post it up
+* tidy up the presentation on the notepad (evaluate pops, list prims and ephs values)
 
 ## Tues 14 Jul (9-1:30,2:30-6:30,10-11p)
 
