@@ -1,21 +1,36 @@
 # Timesheet
 
-## Thu 16 Jul (9-12,2-
+# INVOICE 8 (5.5 + 6 + 6.5 + 8.5 + 8.5 + 2 + 3 + 4.5 = 44.5)
+
+## Mon 20 Jul (10:1, 3-4, 5-6:30 = 4.5)
+
+* find and consume academic articles about GP esp. those that describe looping
+* document 'the problem with deap re: loops and state' 
+* deploy and play with the ant problem
+
+## Fri 17 Jul (9:30-1:00,2-4 = 3.5+2= 5.5)
+
+* much discussion with nigel
+* demonstrating fibonacci like an ant
+
+## Thu 16 Jul (9-12,2-5 = 3+3 = 6)
 
 * watched it run pythag matrix a whole bunch of times
 * working out specs for 'doloop' with nige in 10min bursts because the phones are bad
 * trying to isolate the problem with genGrow that sends it off in a spin sometimes
 * change the grow routine completely; simpler but raises errors more often
 * quick attempt to multiprocess failed quickly - the routines need to be pickleable
+* fibonacci, let, set, do loop. Long discussion with Nige.
 
-## Wed 15 Jul (9:30-2:00, 5:00-7:00)
+
+## Wed 15 Jul (9:30-2:00, 5:00-7:00 = 4.5+2 = 6.5)
 
 * add ephemeral instances to the global/population context
 * crossover adfs with the same name/signature, but not those without, testing it does what I think it does.
 * do a bunch of runs, put the node counter back into the evaluation, post it up
 * tidy up the presentation on the notepad (evaluate pops, list prims and ephs values)
 
-## Tues 14 Jul (9-1:30,2:30-6:30,10-11p)
+## Tues 14 Jul (9-1:30,2:30-6:30,10-11p = 4.5+3+1 = 8.5)
 
 * create a notebook for matrix-pythagoras. not working yet, but might push it up to give nige something to look
    at again. Done.
@@ -27,7 +42,7 @@
    taking into account the exceptions (ephemerals, rpb or adf)
 * worked out an is_compatible routine for checking crossover slices
 
-## Mon 13 Jul (10-1, 3-6:30, 8-10=8.5)
+## Mon 13 Jul (10-1, 3-6:30, 8-10 = 8.5)
 
 * putting together another pythagoras solver, shoehorning in some numpy arrays
 * been quite a while since we did a complete problem, much has changed.  Adapting to the new paradigm (and
@@ -36,11 +51,11 @@
    because the structure of trees/psets has changed considerably since untyped unrandom pythagoras
 * got so far as running without the notebook, abeit not very sensibly
 
-## Sun 12 Jul (2-4pm)
+## Sun 12 Jul (2-4pm = 2)
 
 * isolate the global problem baseset by implementing a local FunctionSet class over the top.
 
-## Fri 10 Jul (10:00-1:00pm)
+## Fri 10 Jul (10:00-1:00pm = 3)
 
 * phaffing, cleaning up the ephemerals. Discussing problem of global empherals vs local functions in the face
    of crossovers.
