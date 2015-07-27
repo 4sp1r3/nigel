@@ -1,5 +1,21 @@
 # Timesheet
 
+# Mon 27 (10-1, 2:30-
+
+* loads data into new little Vertex, Edge, Face classes and hooks it into nige's integral function then
+   tries to loop over every face/vertex/edge to decide if a vertex is visible   
+
+# Fri 24 Jul (10-?, 3-7 = call it 5 hrs).
+
+* ug. loading in the new face/vertice/edge data
+* still loading in the data, trying to loop over it the correct way: vert -> face->vert mech.
+
+# Thu 23 Jul (10---7 -- call it 4 hrs).
+
+* walking through vector arithmetic
+* on and off all day whilst nige fiddles around with calculus
+* painfully walking through calculation of an integral at the lowest of low levels
+
 # INVOICE 8 (5.5 + 6 + 6.5 + 8.5 + 8.5 + 2 + 3 + 4.5 = 44.5)
 
 ## Mon 20 Jul (10:1, 3-4, 5-6:30 = 4.5)
