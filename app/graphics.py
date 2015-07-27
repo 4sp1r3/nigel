@@ -3,6 +3,9 @@ import warnings
 import numpy as np
 
 
+NUMBER_OF_RECTANGLES = 100
+
+
 def f(A, B, V, t):
     PQx = V.x - (A.x + ((B.x - A.x) * t))
     PQy = V.y - (A.y + ((B.y - A.y) * t))
@@ -25,7 +28,7 @@ def f(A, B, V, t):
 
 def integral(A, B, V):
     """Do the line integral"""
-    numberofRectangles = 1000
+    numberofRectangles = NUMBER_OF_RECTANGLES
     startingt = 0.0
     endingt = 1.0
     width = (endingt - startingt) / numberofRectangles
@@ -86,8 +89,6 @@ class Edge(object):
 
 
 class Face(object):
-    ZERO_EQUIVALENCE = 0.00000001
-
     def __init__(self, e1, e2, e3, e4):
         self.e1 = e1
         self.e2 = e2
@@ -95,7 +96,7 @@ class Face(object):
         self.e4 = e4
 
     def __str__(self):
-        return str([self.e1, self.e2, self.e3, self.e4])
+        return "\n".join(map(str, [self.e1, self.e2, self.e3, self.e4]))
 
     def is_blocking(self, vertex):
         """True if the vertex is blocked by this face
@@ -103,11 +104,18 @@ class Face(object):
         Accumulate the integral of each edge in this face with the vertex. If the total is
         zero, then the vertex is visible.
         """
-        sum = 0.0
+        vertices = set()
         for edge in [self.e1, self.e2, self.e3, self.e4]:
             if edge is not None:
-                sum += integral(edge.v1, edge.v2, vertex)
-        return abs(sum) < Face.ZERO_EQUIVALENCE
+                vertices.add(edge.v1)
+                vertices.add(edge.v2)
+        vertices = list(vertices)
+        sum = 0.0
+        for idx in range(len(vertices)):
+            sum += integral(vertices[idx], vertices[idx-1], vertex)
+        print("oi", sum, vertex)
+        # if greater than the margin of error
+        return abs(sum) > 1 / NUMBER_OF_RECTANGLES
 
     @staticmethod
     def load(filename, edges):
