@@ -54,12 +54,6 @@ class Vertex(object):
     def __eq__(self, other):
         return self.id == other.id
 
-    def __lt__(self, other):
-        if self == other:
-            return False
-        else:
-            return self.x < other.x
-
     def is_blocked(self, faces):
         """True when this vertex is blocked from view by faces"""
         for face in faces.values():
@@ -80,7 +74,8 @@ class Vertex(object):
 
 class Edge(object):
     """The vertex ID's of two vertices"""
-    def __init__(self, v1, v2):
+    def __init__(self, id, v1, v2):
+        self.id = id
         self.v1 = v1
         self.v2 = v2
 
@@ -88,12 +83,12 @@ class Edge(object):
         return str([self.v1, self.v2])
 
     def __lt__(self, other):
-        if self.v1 == other.v2:
-            return False
-        elif self.v2 == other.v1:
+        if self.v2 == other.v1:
             return True
+        elif self.v1 == other.v2:
+            return False
         else:
-            return self.v1 < other.v1
+            raise Exception("Not sure", self.id, other.id, self, other)
 
     @staticmethod
     def load(filename, vertices):
@@ -102,14 +97,15 @@ class Edge(object):
 
         edges = {}
         for id, v1, v2 in np_edges:
-            edges[id] = Edge(vertices[v1], vertices[v2])
+            edges[id] = Edge(id, vertices[v1], vertices[v2])
         return edges
 
 
 class Face(object):
-    def __init__(self, edges):
+    def __init__(self, id, vertices):
         """The vertices must be sequential; as per the tracing each edge of the face"""
-        self.vertices = [edge.v1 for edge in sorted(edges)]
+        self.id = id
+        self.vertices = vertices
 
     def __str__(self):
         return "\n".join(map(str, self.vertices))
@@ -131,17 +127,18 @@ class Face(object):
         # face edges (fid, eid, eid, eid, eid)
         # if the last edge is null indicate with a -1 edge id
         convertfunc = lambda x: -1 if x == b'NULL' else x
-        np_faceedges = np.loadtxt(filename, delimiter="\t", skiprows=1,
+        np_faceedges = np.loadtxt(filename, delimiter="\t", skiprows=454,
                                   converters={4: convertfunc},
                                   dtype=[('id', 'i4'), ('edge1', 'i4'), ('edge2', 'i4'), ('edge3', 'i4'), ('edge4', 'i4')])
 
         faces = {}
         for id, *edgeids in np_faceedges:
             try:
-                face_edges = [edges[id] for id in edgeids if id >= 0]
+                face_edges = sorted([edges[id] for id in edgeids if id >= 0])
             except KeyError:
                 # warnings.warn("Face %s discarded because not all these edges are known (%s, %s, %s, %s)." % (id, eid1, eid2, eid3, eid4))
                 pass
             # sort the edges of the faces so that the vertices are sequential
-            faces[id] = Face(face_edges)
+            vertices = [edge.v1 for edge in face_edges]
+            faces[id] = Face(id, vertices)
         return faces
