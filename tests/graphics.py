@@ -14,26 +14,46 @@ class DataImportTestCase(unittest.TestCase):
         print("Vertex")
         print(vertex)
         print("Face")
-        print(face.e1)
-        print(face.e2)
-        print(face.e3)
+        print(face.vertices)
         print("This face is blocking this vertex?")
         print(face.is_blocking(vertex))
 
 
-    def test_data_importing(self):
+    def test_edges(self):
         vertices = Vertex.load('../headmesh/NVertices.txt')
         edges = Edge.load('../headmesh/NEdgeVertices.txt', vertices)
-        print(edges[0])
+        someedges = list(edges.values())[:5]
+        for edge in sorted(someedges):
+            print(edge)
 
+
+    def test_faces(self):
+        vertices = Vertex.load('../headmesh/NVertices.txt')
+        edges = Edge.load('../headmesh/NEdgeVertices.txt', vertices)
         faces = Face.load('../headmesh/NFaceEdges.txt', edges)
-        print(faces[0])
 
-        face = faces[0]
-        vertex = vertices[400]
-        print(face.is_blocking(vertex))
+        for fid in range(5):
+            print("Face ", fid, '\n', faces[fid])
 
+    def test_blockings(self):
+        vertices = Vertex.load('../headmesh/NVertices.txt')
+        edges = Edge.load('../headmesh/NEdgeVertices.txt', vertices)
+        faces = Face.load('../headmesh/NFaceEdges.txt', edges)
+
+        face = faces[36]
+        vertex = vertices[749]
+        print("Vertex")
+        print(vertex)
+        print("Face")
+        print(face.vertices)
+        print("This face is blocking this vertex?", face.is_blocking(vertex))
+        self.assertTrue(face.is_blocking(vertex))
+
+    def test_bigblockingstest(self):
+        from app.graphics import Vertex, Edge, Face
+
+        vertices = Vertex.load('../headmesh/NVertices.txt')
+        edges = Edge.load('../headmesh/NEdgeVertices.txt', vertices)
+        faces = Face.load('../headmesh/NFaceEdges.txt', edges)
         for vertex in vertices.values():
-            blocked = vertex.is_blocked(faces)
-            if not blocked:
-                print(vertex, blocked)
+            print(vertex.id, vertex.is_blocked(faces))

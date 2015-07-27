@@ -1,9 +1,10 @@
 # Timesheet
 
-# Mon 27 (10-1, 2:30-
+# Mon 27 (10-1, 2:30-7pm)
 
 * loads data into new little Vertex, Edge, Face classes and hooks it into nige's integral function then
-   tries to loop over every face/vertex/edge to decide if a vertex is visible   
+   tries to loop over every face/vertex/edge to decide if a vertex is visible
+* sort the edges to ensure the integrate is calculated via sequential vertices
 
 # Fri 24 Jul (10-?, 3-7 = call it 5 hrs).
 

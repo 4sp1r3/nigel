@@ -42,13 +42,23 @@ def integral(A, B, V):
 
 class Vertex(object):
     """The three dimensional coordinates of a vertex"""
-    def __init__(self, x, y, z):
+    def __init__(self, id, x, y, z):
+        self.id = id
         self.x = x
         self.y = y
         self.z = z
 
     def __repr__(self):
         return str([self.x, self.y, self.z])
+
+    def __eq__(self, other):
+        return self.id == other.id
+
+    def __lt__(self, other):
+        if self == other:
+            return False
+        else:
+            return self.x < other.x
 
     def is_blocked(self, faces):
         """True when this vertex is blocked from view by faces"""
@@ -64,7 +74,7 @@ class Vertex(object):
                                  dtype=[('id', 'i4'), ('x', 'f8'), ('y', 'f8'), ('z', 'f8')])
         vertices = {}
         for id, x, y, z in np_vertices:
-            vertices[id] = Vertex(x, y, z)
+            vertices[id] = Vertex(id, x, y, z)
         return vertices
 
 
@@ -76,6 +86,14 @@ class Edge(object):
 
     def __repr__(self):
         return str([self.v1, self.v2])
+
+    def __lt__(self, other):
+        if self.v1 == other.v2:
+            return False
+        elif self.v2 == other.v1:
+            return True
+        else:
+            return self.v1 < other.v1
 
     @staticmethod
     def load(filename, vertices):
@@ -89,14 +107,12 @@ class Edge(object):
 
 
 class Face(object):
-    def __init__(self, e1, e2, e3, e4):
-        self.e1 = e1
-        self.e2 = e2
-        self.e3 = e3
-        self.e4 = e4
+    def __init__(self, edges):
+        """The vertices must be sequential; as per the tracing each edge of the face"""
+        self.vertices = [edge.v1 for edge in sorted(edges)]
 
     def __str__(self):
-        return "\n".join(map(str, [self.e1, self.e2, self.e3, self.e4]))
+        return "\n".join(map(str, self.vertices))
 
     def is_blocking(self, vertex):
         """True if the vertex is blocked by this face
@@ -104,16 +120,9 @@ class Face(object):
         Accumulate the integral of each edge in this face with the vertex. If the total is
         zero, then the vertex is visible.
         """
-        vertices = set()
-        for edge in [self.e1, self.e2, self.e3, self.e4]:
-            if edge is not None:
-                vertices.add(edge.v1)
-                vertices.add(edge.v2)
-        vertices = list(vertices)
         sum = 0.0
-        for idx in range(len(vertices)):
-            sum += integral(vertices[idx], vertices[idx-1], vertex)
-        print("oi", sum, vertex)
+        for idx in range(len(self.vertices)):
+            sum += integral(self.vertices[idx], self.vertices[idx-1], vertex)
         # if greater than the margin of error
         return abs(sum) > 1 / NUMBER_OF_RECTANGLES
 
@@ -127,14 +136,12 @@ class Face(object):
                                   dtype=[('id', 'i4'), ('edge1', 'i4'), ('edge2', 'i4'), ('edge3', 'i4'), ('edge4', 'i4')])
 
         faces = {}
-        for id, eid1, eid2, eid3, eid4 in np_faceedges:
+        for id, *edgeids in np_faceedges:
             try:
-                if eid4 == -1:
-                    args = edges[eid1], edges[eid2], edges[eid3], None
-                else:
-                    args = edges[eid1], edges[eid2], edges[eid3], edges[eid4]
-                faces[id] = Face(*args)
+                face_edges = [edges[id] for id in edgeids if id >= 0]
             except KeyError:
-                #warnings.warn("Face %s discarded because not all these edges are known (%s, %s, %s, %s)." % (id, eid1, eid2, eid3, eid4))
+                # warnings.warn("Face %s discarded because not all these edges are known (%s, %s, %s, %s)." % (id, eid1, eid2, eid3, eid4))
                 pass
+            # sort the edges of the faces so that the vertices are sequential
+            faces[id] = Face(face_edges)
         return faces
