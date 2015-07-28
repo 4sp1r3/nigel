@@ -17,10 +17,7 @@ def f(A, B, V, t):
         B.z - A.z
     ]
     magnitudePQ = math.sqrt(PQx ** 2.0 + PQy ** 2.0 + PQz ** 2.0)
-    try:
-        forceMagnitude = 1 / magnitudePQ
-    except ZeroDivisionError:
-        return 999999
+    forceMagnitude = 1 / magnitudePQ
     forceDirection = np.cross(PQ, [0, 0, 1]) / magnitudePQ
     forceVector = forceMagnitude * forceDirection
     return np.dot(forceVector, AB)
@@ -82,13 +79,11 @@ class Edge(object):
     def __repr__(self):
         return str([self.v1, self.v2])
 
-    def __lt__(self, other):
-        if self.v2 == other.v1:
-            return True
-        elif self.v1 == other.v2:
-            return False
-        else:
-            raise Exception("Not sure", self.id, other.id, self, other)
+    def __iter__(self):
+        return iter([self.v1, self.v2])
+
+    def __eq__(self, other):
+        return self.id == other.id
 
     @staticmethod
     def load(filename, vertices):
@@ -103,7 +98,8 @@ class Edge(object):
 
 class Face(object):
     def __init__(self, id, vertices):
-        """The vertices must be sequential; as per the tracing each edge of the face"""
+        """The vertices must be provided in the order of the path they follow;
+                like tracing each edge of the face"""
         self.id = id
         self.vertices = vertices
 
@@ -116,29 +112,49 @@ class Face(object):
         Accumulate the integral of each edge in this face with the vertex. If the total is
         zero, then the vertex is visible.
         """
-        sum = 0.0
-        for idx in range(len(self.vertices)):
-            sum += integral(self.vertices[idx], self.vertices[idx-1], vertex)
-        # if greater than the margin of error
-        return abs(sum) > 1 / NUMBER_OF_RECTANGLES
+        try:
+            sum = 0.0
+            for idx in range(len(self.vertices)):
+                sum += integral(self.vertices[idx], self.vertices[idx-1], vertex)
+            # if greater than the margin of error
+            return abs(sum) > 1 / NUMBER_OF_RECTANGLES
+        except ZeroDivisionError:
+            return False
 
     @staticmethod
-    def load(filename, edges):
-        # face edges (fid, eid, eid, eid, eid)
+    def load(filename, edges, vertices):
+
+        # get the edges of the face (fid, eid, eid, eid, eid)
         # if the last edge is null indicate with a -1 edge id
         convertfunc = lambda x: -1 if x == b'NULL' else x
-        np_faceedges = np.loadtxt(filename, delimiter="\t", skiprows=454,
+        np_faceedges = np.loadtxt(filename, delimiter="\t", skiprows=1,
                                   converters={4: convertfunc},
                                   dtype=[('id', 'i4'), ('edge1', 'i4'), ('edge2', 'i4'), ('edge3', 'i4'), ('edge4', 'i4')])
 
+        # for every face
         faces = {}
+        # get the edges
         for id, *edgeids in np_faceedges:
+            # assemble the vertices as a path around the edges of the face
+            # by putting all the edges in a list and picking a start vertex
+            # then find a cojoining edge, append the opposite vertex, and removing the edge,
+            # until all the edges have been used.
             try:
-                face_edges = sorted([edges[id] for id in edgeids if id >= 0])
+                face_edges = [edges[id] for id in edgeids if id >= 0]
+                face_path = [face_edges[0].v1]
+                face_edges.pop(0)
+                while len(face_edges):
+                    for idx, edge in enumerate(face_edges):
+                        if edge.v1 == face_path[-1]:
+                            face_path.append(edge.v2)
+                            face_edges.pop(idx)
+                            break
+                        elif edge.v2 == face_path[-1]:
+                            face_path.append(edge.v1)
+                            face_edges.pop(idx)
+                            break
+                faces[id] = Face(id, face_path)
             except KeyError:
                 # warnings.warn("Face %s discarded because not all these edges are known (%s, %s, %s, %s)." % (id, eid1, eid2, eid3, eid4))
                 pass
-            # sort the edges of the faces so that the vertices are sequential
-            vertices = [edge.v1 for edge in face_edges]
-            faces[id] = Face(id, vertices)
         return faces

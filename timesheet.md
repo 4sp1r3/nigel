@@ -1,5 +1,10 @@
 # Timesheet
 
+# Tues 28 (9-3,
+
+* still mucking around with integrals and paths!
+* rework the faces to respect the edges by keeping vertices in order of a path
+
 # Mon 27 (10-1, 2:30-7pm)
 
 * loads data into new little Vertex, Edge, Face classes and hooks it into nige's integral function then
