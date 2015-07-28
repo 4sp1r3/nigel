@@ -19,6 +19,26 @@ class FaceBlockingTestCase(unittest.TestCase):
         v1 = Vertex(1, -1.701380038, -1.005879965, 12.89350033)
         print('v1', v1, face.is_blocking(v1))
 
+    def test_is_behind(self):
+        face = self.faces[36]
+        vertex = self.vertices[749]
+        print("Face\n", face, '\n')
+        #print("Vertex", vertex, "is behind:", face.is_behind(vertex))
+        self.assertTrue(face.is_behind(vertex))
+
+    def test_vertex_behind_the_plane_or_some_such(self):
+        face = self.faces[36]
+        vertex = self.vertices[749]
+        print("Face\n", face, '\n')
+        print("Vertex", vertex, face.is_blocking(vertex))
+        self.assertTrue(face.is_blocking(vertex))
+
+        for z in range(5, 15):
+            vertex.z = z
+            print("Vertex", vertex, face.is_blocking(vertex))
+
+        self.assertFalse(face.is_blocking(vertex))
+
 
 class DataImportTestCase(unittest.TestCase):
     def test_stuff(self):

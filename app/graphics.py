@@ -51,6 +51,9 @@ class Vertex(object):
     def __eq__(self, other):
         return self.id == other.id
 
+    def to_array(self):
+        return np.array([self.x, self.y, self.z])
+
     def is_blocked(self, faces):
         """True when this vertex is blocked from view by faces"""
         for face in faces.values():
@@ -106,18 +109,46 @@ class Face(object):
     def __str__(self):
         return "\n".join(map(str, self.vertices))
 
+    def is_behind(self, vertex):
+        """True if the vertex is behind the plane of this face
+        """
+        # ok to use three vertices of the plane (Nige:28/7/15)
+        V = vertex.to_array()
+        A, B, C = [self.vertices[i].to_array() for i in [0, 1, 2]]
+        AB = B - A
+        AC = C - A
+        ABAC = np.cross([AB[0], AB[1], AB[2]], [AC[0], AC[1], AC[2]])
+        numer = ((A[2] * ABAC[2]) - (V[0]-A[0]) * (ABAC[0]) - (V[1]-A[1]) * (ABAC[1]))
+        denom = (V[2] * ABAC[2])
+        result = numer / denom
+        print("is_behind\nA", A)
+        print("B", B)
+        print("C", C)
+        print("AB", AB)
+        print("AC", AC)
+        print("ABAC", ABAC)
+        print("numer", numer)
+        print("demon", denom)
+        print("result", result)
+        print("is_behind", result > 0)
+        return result > 0
+
     def is_blocking(self, vertex):
+        """True when in line and is behind; whatever they mean"""
+        return self.is_in_line_with(vertex) and self.is_behind(vertex)
+
+    def is_in_line_with(self, vertex):
         """True if the vertex is blocked by this face
 
         Accumulate the integral of each edge in this face with the vertex. If the total is
         zero, then the vertex is visible.
         """
         try:
-            sum = 0.0
+            tegral = 0.0
             for idx in range(len(self.vertices)):
-                sum += integral(self.vertices[idx], self.vertices[idx-1], vertex)
+                tegral += integral(self.vertices[idx], self.vertices[idx - 1], vertex)
             # if greater than the margin of error
-            return abs(sum) > 1 / NUMBER_OF_RECTANGLES
+            return abs(tegral) > 1 / NUMBER_OF_RECTANGLES
         except ZeroDivisionError:
             return False
 

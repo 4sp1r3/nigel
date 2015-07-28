@@ -1,11 +1,14 @@
 # Timesheet
 
-# Tues 28 (9-3,
+4+5+7.5+8 = 24.5
+
+# Tues 28 (9-3,3:30:5:30 = 6+2 = 8)
 
 * still mucking around with integrals and paths!
 * rework the faces to respect the edges by keeping vertices in order of a path
+* implement "is_behind" routine
 
-# Mon 27 (10-1, 2:30-7pm)
+# Mon 27 (10-1, 2:30-7pm = 3+4.5 = 7.5)
 
 * loads data into new little Vertex, Edge, Face classes and hooks it into nige's integral function then
    tries to loop over every face/vertex/edge to decide if a vertex is visible
