@@ -2,6 +2,10 @@
 
 4+5+7.5+8 = 24.5
 
+# Wed 29 (9-11,12-
+
+* working through the integrals again/still - change the faces to be built by a path
+
 # Tues 28 (9-3,3:30:5:30 = 6+2 = 8)
 
 * still mucking around with integrals and paths!

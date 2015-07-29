@@ -100,11 +100,11 @@ class Edge(object):
 
 
 class Face(object):
-    def __init__(self, id, vertices):
-        """The vertices must be provided in the order of the path they follow;
-                like tracing each edge of the face"""
+    def __init__(self, id, edges):
+        """The list of edges must form a path"""
         self.id = id
-        self.vertices = vertices
+        self.edges = edges
+        self.vertices = Face._sort_vertices_into_path(edges)
 
     def __str__(self):
         return "\n".join(map(str, self.vertices))
@@ -117,25 +117,9 @@ class Face(object):
         A, B, C = [self.vertices[i].to_array() for i in [0, 1, 2]]
         AB = B - A
         AC = C - A
-        ABAC = np.cross([AB[0], AB[1], AB[2]], [AC[0], AC[1], AC[2]])
-        numer = ((A[2] * ABAC[2]) - (V[0]-A[0]) * (ABAC[0]) - (V[1]-A[1]) * (ABAC[1]))
-        denom = (V[2] * ABAC[2])
-        result = numer / denom
-        print("is_behind\nA", A)
-        print("B", B)
-        print("C", C)
-        print("AB", AB)
-        print("AC", AC)
-        print("ABAC", ABAC)
-        print("numer", numer)
-        print("demon", denom)
-        print("result", result)
-        print("is_behind", result > 0)
+        ABxAC = np.cross(AB, AC)
+        result = (((A[0] - V[0]) * (ABxAC[0]) + (A[1] - V[1]) * (ABxAC[1])) / (ABxAC[2])) + (A[2] - V[2])
         return result > 0
-
-    def is_blocking(self, vertex):
-        """True when in line and is behind; whatever they mean"""
-        return self.is_in_line_with(vertex) and self.is_behind(vertex)
 
     def is_in_line_with(self, vertex):
         """True if the vertex is blocked by this face
@@ -144,13 +128,44 @@ class Face(object):
         zero, then the vertex is visible.
         """
         try:
-            tegral = 0.0
+            total = 0.0
             for idx in range(len(self.vertices)):
-                tegral += integral(self.vertices[idx], self.vertices[idx - 1], vertex)
-            # if greater than the margin of error
-            return abs(tegral) > 1 / NUMBER_OF_RECTANGLES
+                tegral = integral(self.vertices[idx], self.vertices[idx - 1], vertex)
+                total += tegral
+            result = abs(tegral) > 1 / NUMBER_OF_RECTANGLES  # relate the margin of error to number of rectangles
+            return result
         except ZeroDivisionError:
             return False
+
+    def is_blocking(self, vertex):
+        """True when in line and is behind; whatever they mean"""
+        return self.is_in_line_with(vertex) and self.is_behind(vertex)
+
+    @staticmethod
+    def _sort_vertices_into_path(in_edges):
+        """converts a series of edges into a path of vertices
+
+        # assemble the vertices as a path around the edges of the face
+        # by putting all the edges in a list and picking a start vertex
+        # then find a cojoining edge, append the opposite vertex, and removing the edge,
+        # until all the edges have been used.
+        """
+        edges = in_edges.copy()
+        path = [edges[0].v1]
+        edges.pop(0)
+        while len(edges):
+            for idx, edge in enumerate(edges):
+                if edge.v1 == path[-1]:
+                    path.append(edge.v2)
+                    edges.pop(idx)
+                    break
+                elif edge.v2 == path[-1]:
+                    path.append(edge.v1)
+                    edges.pop(idx)
+                    break
+            else:
+                raise Exception("These edges are expected to form a path: %s" % in_edges)
+        return path
 
     @staticmethod
     def load(filename, edges, vertices):
@@ -166,25 +181,9 @@ class Face(object):
         faces = {}
         # get the edges
         for id, *edgeids in np_faceedges:
-            # assemble the vertices as a path around the edges of the face
-            # by putting all the edges in a list and picking a start vertex
-            # then find a cojoining edge, append the opposite vertex, and removing the edge,
-            # until all the edges have been used.
             try:
                 face_edges = [edges[id] for id in edgeids if id >= 0]
-                face_path = [face_edges[0].v1]
-                face_edges.pop(0)
-                while len(face_edges):
-                    for idx, edge in enumerate(face_edges):
-                        if edge.v1 == face_path[-1]:
-                            face_path.append(edge.v2)
-                            face_edges.pop(idx)
-                            break
-                        elif edge.v2 == face_path[-1]:
-                            face_path.append(edge.v1)
-                            face_edges.pop(idx)
-                            break
-                faces[id] = Face(id, face_path)
+                faces[id] = Face(id, face_edges)
             except KeyError:
                 # warnings.warn("Face %s discarded because not all these edges are known (%s, %s, %s, %s)." % (id, eid1, eid2, eid3, eid4))
                 pass
