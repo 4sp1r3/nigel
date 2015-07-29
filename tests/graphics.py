@@ -1,7 +1,20 @@
 import unittest
 import random
+import collections
 from app.graphics import Vertex, Edge, Face
 
+
+A = Vertex('A', -4., 4., 0)
+B = Vertex('B', 4., 4., 0)
+C = Vertex('C', 4., -4., 0)
+D = Vertex('D', -4., -4., 0)
+AB = Edge('AB', A, B)
+BC = Edge('BC', B, C)
+CD = Edge('CD', C, D)
+DA = Edge('DA', D, A)
+AC = Edge('AC', A, C)
+CA = Edge('CA', C, A)
+CB = Edge('CB', C, B)
 
 class DataImportTestCase(unittest.TestCase):
     """
@@ -11,7 +24,7 @@ class DataImportTestCase(unittest.TestCase):
         """just demonstrate loading of the mesh from text files"""
         vertices = Vertex.load('../headmesh/NVertices.txt')
         edges = Edge.load('../headmesh/NEdgeVertices.txt', vertices)
-        faces = Face.load('../headmesh/NFaceEdges.txt', edges, vertices)
+        faces = Face.load('../headmesh/NFaceEdges.txt', edges)
         self.assertTrue(len(vertices))
         self.assertTrue(len(edges))
         self.assertTrue(len(faces))
@@ -24,26 +37,62 @@ class DataImportTestCase(unittest.TestCase):
         for fid in range(5):
             print("Face", fid, '\n', faces[fid])
 
+    def test_edges_sort(self):
+        """ensure that the sorting of edges results in tail-tip-tail-tip path"""
+        # this is not a valid path
+        circle_path = [AB, BC, DA, CD]
+        self.assertFalse(Face.is_face(circle_path))
+
+        # but after sorting it is a valid path
+        sorted_path = Edge.sort(circle_path)
+        print([e.id for e in circle_path], [e.id for e in sorted_path])
+        self.assertTrue(Face.is_face(sorted_path))
+
+        # this is not a valid path and one of the edges is backward
+        triangle_path = [AB, CA, CB]
+        self.assertFalse(Face.is_face(triangle_path))
+
+        # but after sorting it is a valid path
+        sorted_path = Edge.sort(triangle_path)
+        print([e.id for e in triangle_path], [e.id for e in sorted_path])
+        self.assertTrue(Face.is_face(sorted_path))
+
     def test_face_order_of_vertices(self):
         """ensure a face is a path of sequential edges that end back where it started"""
-        A = Vertex('A', -4., 4., 0)
-        B = Vertex('B', 4., 4., 0)
-        C = Vertex('C', 4., -4., 0)
-        D = Vertex('D', -4., -4., 0)
-        e1 = Edge(1, A, B)
-        e2 = Edge(2, B, C)
-        e3 = Edge(3, C, D)
-        e4 = Edge(4, D, A)
         valid_paths = [
             [A, B, C, D], [B, C, D, A], [C, D, A, B], [D, A, B, C],
             [A, D, C, B], [D, C, B, A], [C, B, A, D], [B, A, D, C]
         ]
-        edges = [e4, e1, e3, e2]
+        edges = [AB, BC, CD, DA]
         for _ in range(50):
             random.shuffle(edges)
             face = Face(1, edges)
             print([e.id for e in edges], "=>", [v.id for v in face.vertices])
             self.assertTrue(face.vertices in valid_paths)
+
+
+class EdgeAndFaceTestCase(unittest.TestCase):
+    """Test the minor edges and faces routines"""
+    def test_is_face(self):
+        """ensure these paths are, and are not, paths no matter what point in the sequence
+        they are presented"""
+        square = collections.deque([AB, BC, CD, DA])
+        for _ in range(len(square)):
+            self.assertTrue(Face.is_face(square))
+            square.rotate(1)
+        square = collections.deque([AB, AC, CD, DA])
+        for _ in range(len(square)):
+            self.assertFalse(Face.is_face(square))
+            square.rotate(1)
+
+        triangle = collections.deque([AB, CA, BC])
+        for _ in range(len(triangle)):
+            self.assertFalse(Face.is_face(triangle))
+            square.rotate(1)
+        triangle = collections.deque([BC, CA, AB])
+        for _ in range(len(triangle)):
+            self.assertTrue(Face.is_face(triangle))
+            square.rotate(1)
 
 
 class VertexBlockingTestCase(unittest.TestCase):
@@ -53,7 +102,7 @@ class VertexBlockingTestCase(unittest.TestCase):
     def setUp(self):
         self.vertices = Vertex.load('../headmesh/NVertices.txt')
         self.edges = Edge.load('../headmesh/NEdgeVertices.txt', self.vertices)
-        self.faces = Face.load('../headmesh/NFaceEdges.txt', self.edges, self.vertices)
+        self.faces = Face.load('../headmesh/NFaceEdges.txt', self.edges)
 
     def test_stuff(self):
         """just play around here"""

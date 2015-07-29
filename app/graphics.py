@@ -1,5 +1,4 @@
 import math
-import warnings
 import numpy as np
 
 
@@ -64,8 +63,10 @@ class Vertex(object):
     @staticmethod
     def load(filename):
         # vertices (vid, x, y, z)
-        np_vertices = np.loadtxt(filename, delimiter="\t", skiprows=1,
-                                 dtype=[('id', 'i4'), ('x', 'f8'), ('y', 'f8'), ('z', 'f8')])
+        np_vertices = np.loadtxt(
+            filename, delimiter="\t", skiprows=1,
+            dtype=[('id', 'i4'), ('x', 'f8'), ('y', 'f8'), ('z', 'f8')]
+        )
         vertices = {}
         for id, x, y, z in np_vertices:
             vertices[id] = Vertex(id, x, y, z)
@@ -85,8 +86,37 @@ class Edge(object):
     def __iter__(self):
         return iter([self.v1, self.v2])
 
+    def __lt__(self, other):
+        if self.v2 == other.v1:
+            return True
+        if self.v1 == other.v2:
+            return False
+        return Exception('Edges are neither less than, nor greater than')
+
     def __eq__(self, other):
         return self.id == other.id
+
+    @staticmethod
+    def sort(edges):
+        """return the list of edges in tip-to-tail order, flipping an edge end-for-end
+        if necessary"""
+        edgestack = edges.copy()
+        path = [edgestack[0]]
+        edgestack.pop(0)
+        while len(edgestack):
+            for idx, edge in enumerate(edgestack):
+                if path[-1].v2 == edge.v1:
+                    path.append(edge)
+                    edgestack.pop(idx)
+                    break
+                elif path[-1].v2 == edge.v2:
+                    # flip this edge around
+                    path.append(Edge(str(edge.id)+'*', edge.v2, edge.v1))
+                    edgestack.pop(idx)
+                    break
+            else:
+                raise Exception("These edges do not form a path: %s" % edges)
+        return path
 
     @staticmethod
     def load(filename, vertices):
@@ -101,10 +131,12 @@ class Edge(object):
 
 class Face(object):
     def __init__(self, id, edges):
-        """The list of edges must form a path"""
+        """Although they may be presented out of order, the list of edges must ultimately
+         form a contiguous circular path through each vertex"""
         self.id = id
-        self.edges = edges
-        self.vertices = Face._sort_vertices_into_path(edges)
+        self.edges = Edge.sort(edges)
+        self.vertices = [e.v1 for e in self.edges]
+        assert(Face.is_face(self.edges))
 
     def __str__(self):
         return "\n".join(map(str, self.vertices))
@@ -142,41 +174,27 @@ class Face(object):
         return self.is_inside(vertex) and self.is_behind(vertex)
 
     @staticmethod
-    def _sort_vertices_into_path(in_edges):
-        """converts a series of edges into a path of vertices
-
-        # assemble the vertices as a path around the edges of the face
-        # by putting all the edges in a list and picking a start vertex
-        # then find a cojoining edge, append the opposite vertex, and removing the edge,
-        # until all the edges have been used.
-        """
-        edges = in_edges.copy()
-        path = [edges[0].v1]
-        edges.pop(0)
-        while len(edges):
-            for idx, edge in enumerate(edges):
-                if edge.v1 == path[-1]:
-                    path.append(edge.v2)
-                    edges.pop(idx)
-                    break
-                elif edge.v2 == path[-1]:
-                    path.append(edge.v1)
-                    edges.pop(idx)
-                    break
+    def is_face(edges):
+        """True if the edges describe the closed face of a contiguous path through the
+        vertices"""
+        start_vertex = edges[0].v1
+        current_vertex = start_vertex
+        for edge in edges:
+            if current_vertex == edge.v1:
+                current_vertex = edge.v2
             else:
-                raise Exception("These edges are expected to form a path: %s" % in_edges)
-        return path
+                return False
+        return current_vertex == start_vertex
 
     @staticmethod
-    def load(filename, edges, vertices):
-
+    def load(filename, edges):
         # get the edges of the face (fid, eid, eid, eid, eid)
         # if the last edge is null indicate with a -1 edge id
         convertfunc = lambda x: -1 if x == b'NULL' else x
-        np_faceedges = np.loadtxt(filename, delimiter="\t", skiprows=1,
-                                  converters={4: convertfunc},
-                                  dtype=[('id', 'i4'), ('edge1', 'i4'), ('edge2', 'i4'), ('edge3', 'i4'), ('edge4', 'i4')])
-
+        np_faceedges = np.loadtxt(
+            filename, delimiter="\t", skiprows=1, converters={4: convertfunc},
+            dtype=[('id', 'i4'), ('edge1', 'i4'), ('edge2', 'i4'), ('edge3', 'i4'), ('edge4', 'i4')]
+        )
         # for every face
         faces = {}
         # get the edges
@@ -185,6 +203,6 @@ class Face(object):
                 face_edges = [edges[id] for id in edgeids if id >= 0]
                 faces[id] = Face(id, face_edges)
             except KeyError:
-                # warnings.warn("Face %s discarded because not all these edges are known (%s, %s, %s, %s)." % (id, eid1, eid2, eid3, eid4))
                 pass
+                #print("Face %s discarded because not all these edges are known (%s)." % (id, edgeids))
         return faces
