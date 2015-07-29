@@ -121,7 +121,7 @@ class Face(object):
         result = (((A[0] - V[0]) * (ABxAC[0]) + (A[1] - V[1]) * (ABxAC[1])) / (ABxAC[2])) + (A[2] - V[2])
         return result > 0
 
-    def is_in_line_with(self, vertex):
+    def is_inside(self, vertex):
         """True if the vertex is blocked by this face
 
         Accumulate the integral of each edge in this face with the vertex. If the total is
@@ -132,14 +132,14 @@ class Face(object):
             for idx in range(len(self.vertices)):
                 tegral = integral(self.vertices[idx], self.vertices[idx - 1], vertex)
                 total += tegral
-            result = abs(tegral) > 1 / NUMBER_OF_RECTANGLES  # relate the margin of error to number of rectangles
+            result = abs(total) > 1 / NUMBER_OF_RECTANGLES  # relate the margin of error to number of rectangles
             return result
         except ZeroDivisionError:
             return False
 
     def is_blocking(self, vertex):
         """True when in line and is behind; whatever they mean"""
-        return self.is_in_line_with(vertex) and self.is_behind(vertex)
+        return self.is_inside(vertex) and self.is_behind(vertex)
 
     @staticmethod
     def _sort_vertices_into_path(in_edges):
