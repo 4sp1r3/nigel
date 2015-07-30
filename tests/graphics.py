@@ -17,6 +17,12 @@ CA = Edge('CA', C, A)
 CB = Edge('CB', C, B)
 
 
+def approx_equal(a, b):
+    """returns true if a and b are within the margin of accuracy"""
+    return abs(a-b) <= ACCURACY
+
+
+
 class DataImportTestCase(unittest.TestCase):
     """
     Test the importing of head mesh data
@@ -196,13 +202,17 @@ class VertexBlockingTestCase(unittest.TestCase):
         print("Face\n", face, '\n')
         print("Vertex %s %s blocking is %s" % (vertex.id, vertex, face.is_blocking(vertex)))
 
-        # Nige says never mind, it was just one combo he knew about 30/6/15
-        #self.assertTrue(face.is_blocking(vertex))
+        # Nige says never mind, it was just one combo he knew about 30/6/15.
+        # And 4hours later has forgotten he said 'never mind' and gets super suspicious
+        # and thinks I'm hiding something and is generally very confused when he challenges
+        # me about whether this works still... "but it used to work, so you must've changed
+        # something"- which I did, with his understanding consent, when posings questions about
+        # accuracy (1/rectangles vs 0.04).
+        #FIXME: self.assertTrue(face.is_blocking(vertex))
 
         for z in range(5, 15):
             vertex.z = z
             print("Vertex", vertex, face.is_blocking(vertex))
-
 
 
 class EdgeOcclusionTestCase(unittest.TestCase):
@@ -288,20 +298,65 @@ class FaceOcclusionTestCase(unittest.TestCase):
     """
     Detect faces which are fully/partally hidden by faces
     """
-    def test_face_occlusion(self):
-        """move a triangle across and behind a square"""
-        result = False
-        self.assertTrue(result)
+    def setUp(self):
+        self.square = Face('square', [AB, BC, CD, DA])
 
-    def test_face_occlusion(self):
-        """move a big square across and behind a tiny triangle
-        When encased, the little triangle does not hide the big square;
-        leave it to other faces to hide the edges of the square: Nige 29Jul15
-        """
-        result = False
-        self.assertTrue(result)
+    def test_face_occlusion_behind(self):
+        """move the triangle behind the square"""
+        for x in range(-7, 7):
+            E = Vertex('E', x+1., 5., -10)
+            F = Vertex('F', x+2., 0., -10)
+            G = Vertex('G', x, -3., -9)
+            EF, FG, GE = Edge('EF', E, F), Edge('FG', F, G), Edge('GE', G, E)
+            triangle = Face('triangle', [EF, FG, GE])
+            print(F.x, G.x, self.square.is_blocking(triangle))
+            if approx_equal(F.x, A.x) or approx_equal(G.x, B.x):
+                pass
+            if F.x < A.x:
+                self.assertFalse(self.square.is_blocking(triangle))
+            if G.x > B.x:
+                self.assertFalse(self.square.is_blocking(triangle))
+            if A.x < F.x < B.x:
+                self.assertTrue(self.square.is_blocking(triangle))
+            if A.x < G.x < B.x:
+                self.assertTrue(self.square.is_blocking(triangle))
 
     def test_face_non_occlusion(self):
         """move a triangle across in front of a square"""
-        result = False
-        self.assertTrue(result)
+        """move the triangle behind the square"""
+        for x in range(-7, 7):
+            E = Vertex('E', x + 1., 5., 10)
+            F = Vertex('F', x + 2., 0., 10)
+            G = Vertex('G', x, -3., 9)
+            EF, FG, GE = Edge('EF', E, F), Edge('FG', F, G), Edge('GE', G, E)
+            triangle = Face('triangle', [EF, FG, GE])
+            print(F.x, G.x, self.square.is_blocking(triangle))
+            self.assertFalse(self.square.is_blocking(triangle))
+
+    def test_face_occlusion(self):
+        """move a big square across and behind a tiny triangle
+
+        Nige 29Jul15: When encased, the little triangle does not hide the big square;
+        leave it to other faces to hide the edges of the square
+
+        John 30Jul15: which is nonsense because the tiny triangle is _behind_
+        the square, so it should still report blocked when encased nonetheless.
+        """
+        print(self.square)
+        for x in range(-7, 7):
+            E = Vertex('E', x + 1.5, 2, -10)
+            F = Vertex('F', x + 2.5, -1, -10)
+            G = Vertex('G', x + 0.5, -1., -9)
+            EF, FG, GE = Edge('EF', E, F), Edge('FG', F, G), Edge('GE', G, E)
+            triangle = Face('triangle', [EF, FG, GE])
+            print(triangle, self.square.is_blocking(triangle))
+            if approx_equal(F.x, A.x) or approx_equal(G.x, B.x):
+                pass
+            if F.x < A.x:
+                self.assertFalse(self.square.is_blocking(triangle))
+            if G.x > B.x:
+                self.assertFalse(self.square.is_blocking(triangle))
+            if A.x < F.x < B.x:
+                self.assertTrue(self.square.is_blocking(triangle))
+            if A.x < G.x < B.x:
+                self.assertTrue(self.square.is_blocking(triangle))

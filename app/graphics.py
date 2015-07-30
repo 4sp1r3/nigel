@@ -83,6 +83,9 @@ class Edge(object):
     def __repr__(self):
         return str([self.v1, self.v2])
 
+    def __str__(self):
+        return self.id + self.__repr__()
+
     def __iter__(self):
         return iter([self.v1, self.v2])
 
@@ -139,7 +142,7 @@ class Face(object):
         assert(Face.is_face(self.edges))
 
     def __str__(self):
-        return "\n".join(map(str, self.vertices))
+        return str(self.id) + str(self.vertices)
 
     def is_behind(self, vertex):
         """True if the vertex is behind the plane of this face
@@ -175,6 +178,8 @@ class Face(object):
             return self.is_inside(obj) and self.is_behind(obj)
         if isinstance(obj, Edge):
             return self.is_blocking(obj.v1) or self.is_blocking(obj.v2)
+        if isinstance(obj, Face):
+            return any([self.is_blocking(edge) for edge in obj.edges])
         return NotImplementedError()
 
     @staticmethod
