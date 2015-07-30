@@ -60,18 +60,6 @@ class Vertex(object):
                 return True
         return False
 
-    @staticmethod
-    def load(filename):
-        # vertices (vid, x, y, z)
-        np_vertices = np.loadtxt(
-            filename, delimiter="\t", skiprows=1,
-            dtype=[('id', 'i4'), ('x', 'f8'), ('y', 'f8'), ('z', 'f8')]
-        )
-        vertices = {}
-        for id, x, y, z in np_vertices:
-            vertices[id] = Vertex(id, x, y, z)
-        return vertices
-
 
 class Edge(object):
     """The vertex ID's of two vertices"""
@@ -84,7 +72,7 @@ class Edge(object):
         return str([self.v1, self.v2])
 
     def __str__(self):
-        return self.id + self.__repr__()
+        return str(self.id) + self.__repr__()
 
     def __iter__(self):
         return iter([self.v1, self.v2])
@@ -118,18 +106,12 @@ class Edge(object):
                     edgestack.pop(idx)
                     break
             else:
-                raise Exception("These edges do not form a path: %s" % edges)
+                message = "These edges do not form a path: {}\n{}".format(
+                    [e.id for e in edges],
+                    "\n".join(map(str, edges))
+                )
+                raise Exception(message)
         return path
-
-    @staticmethod
-    def load(filename, vertices):
-        # edge vertices (eid, vid, vid)
-        np_edges = np.loadtxt(filename, delimiter="\t", skiprows=1, dtype="i4,i4,i4")
-
-        edges = {}
-        for id, v1, v2 in np_edges:
-            edges[id] = Edge(id, vertices[v1], vertices[v2])
-        return edges
 
 
 class Face(object):
@@ -195,8 +177,42 @@ class Face(object):
                 return False
         return current_vertex == start_vertex
 
+
+class Scene(object):
+    """
+    A collection of faces which interact with each other toward an orthogonal view.
+    """
+    def __init__(self, facesfile, edgesfile, verticesfile):
+        """
+        :param faces: a list of Face objects
+        """
+        # load the scene from the text files
+        self.vertices = Scene._load_vertices(verticesfile)
+        self.edges = self._load_edges(edgesfile)
+        self.faces = self._load_faces(facesfile)
+
     @staticmethod
-    def load(filename, edges):
+    def _load_vertices(filename):
+        # vertices (vid, x, y, z)
+        np_vertices = np.loadtxt(
+            filename, delimiter="\t", skiprows=1,
+            dtype=[('id', 'i4'), ('x', 'f8'), ('y', 'f8'), ('z', 'f8')]
+        )
+        vertices = {}
+        for id, x, y, z in np_vertices:
+            vertices[id] = Vertex(id, x, y, z)
+        return vertices
+
+    def _load_edges(self, filename):
+        # edge vertices (eid, vid, vid)
+        np_edges = np.loadtxt(filename, delimiter="\t", skiprows=1, dtype="i4,i4,i4")
+
+        edges = {}
+        for id, v1, v2 in np_edges:
+            edges[id] = Edge(id, self.vertices[v1], self.vertices[v2])
+        return edges
+
+    def _load_faces(self, filename):
         # get the edges of the face (fid, eid, eid, eid, eid)
         # if the last edge is null indicate with a -1 edge id
         convertfunc = lambda x: -1 if x == b'NULL' else x
@@ -209,9 +225,9 @@ class Face(object):
         # get the edges
         for id, *edgeids in np_faceedges:
             try:
-                face_edges = [edges[id] for id in edgeids if id >= 0]
+                face_edges = [self.edges[id] for id in edgeids if id >= 0]
                 faces[id] = Face(id, face_edges)
             except KeyError:
                 pass
-                #print("Face %s discarded because not all these edges are known (%s)." % (id, edgeids))
+                # print("Face %s discarded because not all these edges are known (%s)." % (id, edgeids))
         return faces

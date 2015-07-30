@@ -1,7 +1,7 @@
 import unittest
 import random
 import collections
-from app.graphics import Vertex, Edge, Face, ACCURACY
+from app.graphics import Vertex, Edge, Face, ACCURACY, Scene
 
 
 A = Vertex('A', -4., 4., 0)
@@ -23,26 +23,28 @@ def approx_equal(a, b):
 
 
 
-class DataImportTestCase(unittest.TestCase):
+class SceneTestCase(unittest.TestCase):
     """
     Test the importing of head mesh data
     """
     def test_import(self):
         """just demonstrate loading of the mesh from text files"""
-        vertices = Vertex.load('../headmesh/NVertices.txt')
-        edges = Edge.load('../headmesh/NEdgeVertices.txt', vertices)
-        faces = Face.load('../headmesh/NFaceEdges.txt', edges)
-        self.assertTrue(len(vertices))
-        self.assertTrue(len(edges))
-        self.assertTrue(len(faces))
+        scene = Scene(
+            '../headmesh/NFaceEdges.txt',
+            '../headmesh/NEdgeVertices.txt',
+            '../headmesh/NVertices.txt'
+        )
+        self.assertTrue(len(scene.vertices))
+        self.assertTrue(len(scene.edges))
+        self.assertTrue(len(scene.faces))
 
-        face = faces[36]
-        vertex = vertices[749]
+        face = scene.faces[36]
+        vertex = scene.vertices[749]
         print("Vertex", vertex)
         print("Face:\n", face.vertices)
         print("This face is blocking this vertex?", face.is_blocking(vertex))
         for fid in range(5):
-            print("Face", fid, '\n', faces[fid])
+            print("Face", fid, '\n', scene.faces[fid])
 
     def test_edges_sort(self):
         """ensure that the sorting of edges results in tail-tip-tail-tip path"""
@@ -107,9 +109,14 @@ class VertexBlockingTestCase(unittest.TestCase):
     Tests routines involved in detection of a face blocking a vertex
     """
     def setUp(self):
-        self.vertices = Vertex.load('../headmesh/NVertices.txt')
-        self.edges = Edge.load('../headmesh/NEdgeVertices.txt', self.vertices)
-        self.faces = Face.load('../headmesh/NFaceEdges.txt', self.edges)
+        scene = Scene(
+            '../headmesh/NFaceEdges.txt',
+            '../headmesh/NEdgeVertices.txt',
+            '../headmesh/NVertices.txt'
+        )
+        self.vertices = scene.vertices
+        self.edges = scene.edges
+        self.faces = scene.faces
 
     def test_stuff(self):
         """just play around here"""
