@@ -38,6 +38,10 @@ class SceneTestCase(unittest.TestCase):
         self.assertTrue(len(scene.edges))
         self.assertTrue(len(scene.faces))
 
+        print("Vertices: %s" % len(scene.vertices))
+        print("Edges: %s" % len(scene.edges))
+        print("Faces: %s" % len(scene.faces))
+
         face = scene.faces[36]
         vertex = scene.vertices[749]
         print("Vertex", vertex)
