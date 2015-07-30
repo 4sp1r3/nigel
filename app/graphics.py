@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-
+ACCURACY = 0.04
 NUMBER_OF_RECTANGLES = 100
 
 
@@ -40,9 +40,9 @@ class Vertex(object):
     """The three dimensional coordinates of a vertex"""
     def __init__(self, id, x, y, z):
         self.id = id
-        self.x = x
-        self.y = y
-        self.z = z
+        self.x = float(x)
+        self.y = float(y)
+        self.z = float(z)
 
     def __repr__(self):
         return str([self.x, self.y, self.z])
@@ -111,7 +111,7 @@ class Edge(object):
                     break
                 elif path[-1].v2 == edge.v2:
                     # flip this edge around
-                    path.append(Edge(str(edge.id)+'*', edge.v2, edge.v1))
+                    path.append(Edge('-' + str(edge.id), edge.v2, edge.v1))
                     edgestack.pop(idx)
                     break
             else:
@@ -162,16 +162,20 @@ class Face(object):
         try:
             total = 0.0
             for idx in range(len(self.vertices)):
-                tegral = integral(self.vertices[idx], self.vertices[idx - 1], vertex)
+                tegral = integral(self.vertices[idx - 1], self.vertices[idx], vertex)
                 total += tegral
-            result = abs(total) > 1 / NUMBER_OF_RECTANGLES  # relate the margin of error to number of rectangles
+            result = abs(total) > ACCURACY
             return result
         except ZeroDivisionError:
             return False
 
-    def is_blocking(self, vertex):
+    def is_blocking(self, obj):
         """True when in line and is behind; whatever they mean"""
-        return self.is_inside(vertex) and self.is_behind(vertex)
+        if isinstance(obj, Vertex):
+            return self.is_inside(obj) and self.is_behind(obj)
+        if isinstance(obj, Edge):
+            return self.is_blocking(obj.v1) or self.is_blocking(obj.v2)
+        return NotImplementedError()
 
     @staticmethod
     def is_face(edges):

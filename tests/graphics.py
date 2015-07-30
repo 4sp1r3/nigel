@@ -1,7 +1,7 @@
 import unittest
 import random
 import collections
-from app.graphics import Vertex, Edge, Face
+from app.graphics import Vertex, Edge, Face, ACCURACY
 
 
 A = Vertex('A', -4., 4., 0)
@@ -15,6 +15,7 @@ DA = Edge('DA', D, A)
 AC = Edge('AC', A, C)
 CA = Edge('CA', C, A)
 CB = Edge('CB', C, B)
+
 
 class DataImportTestCase(unittest.TestCase):
     """
@@ -193,14 +194,15 @@ class VertexBlockingTestCase(unittest.TestCase):
         face = self.faces[36]
         vertex = self.vertices[749]
         print("Face\n", face, '\n')
-        print("Vertex", vertex, face.is_blocking(vertex))
-        self.assertTrue(face.is_blocking(vertex))
+        print("Vertex %s %s blocking is %s" % (vertex.id, vertex, face.is_blocking(vertex)))
+
+        # Nige says never mind, it was just one combo he knew about 30/6/15
+        #self.assertTrue(face.is_blocking(vertex))
 
         for z in range(5, 15):
             vertex.z = z
             print("Vertex", vertex, face.is_blocking(vertex))
 
-        self.assertFalse(face.is_blocking(vertex))
 
 
 class EdgeOcclusionTestCase(unittest.TestCase):
@@ -208,18 +210,78 @@ class EdgeOcclusionTestCase(unittest.TestCase):
     * detect edges which are fully/partially hidden by faces, and
     """
     def test_edge_occlusion(self):
-        """move an edge from one side of a face, behind it, and out the other side
+        """move an overlapping edge from one side of a face, behind it, and out the other side
         Should start not hidden, become hidden, then reappear
         """
-        result = False
-        self.assertTrue(result)
+        # make a face and an edge
+        face = Face('square', [AB, BC, CD, DA])
+        print(face)
+        for x in range(-10, 10):
+            J, K = Vertex('J', x, 0, -10), Vertex('K', x, 8, -10)
+            JK = Edge('JK', J, K)
+            print(JK, face.is_blocking(JK))
+            if x in range(-3, 4):
+                self.assertTrue(face.is_blocking(JK))
+            else:
+                self.assertFalse(face.is_blocking(JK))
 
     def test_edge_non_occlusion(self):
-        """move an edge from one side of a face, in front of it, and out the other side
+        """move an overlapping edge from one side of a face, in front of it, and out the other side
         Should never be hidden
         """
-        result = False
-        self.assertTrue(result)
+        # make a face and an edge
+        face = Face('square', [AB, BC, CD, DA])
+        print(face)
+        for x in range(-10, 10):
+            J, K = Vertex('J', x, 0, 10), Vertex('K', x, 8, 10)
+            JK = Edge('JK', J, K)
+            print(JK, face.is_blocking(JK))
+            self.assertFalse(face.is_blocking(JK))
+
+    def test_edge_momentary_occlusion(self):
+        """move a small edge from one side of a face, totally behind it, and out the other side
+        Should be not hidden, hidden, not hidden
+        """
+        # make a face and an edge
+        face = Face('square', [AB, BC, CD, DA])
+        print(face)
+        for x in range(-8, 9):
+            J, K = Vertex('J', x, 2, -10), Vertex('K', x, -2, -10)
+            JK = Edge('JK', J, K)
+            print(JK, face.is_inside(J), face.is_inside(K))
+            if abs(x) - abs(A.x) > ACCURACY:
+                if abs(x) < abs(A.x):
+                    self.assertTrue(face.is_blocking(JK))
+                else:
+                    self.assertFalse(face.is_blocking(JK))
+        print()
+        for y in range(-8, 9):
+            y += 0.5
+            J, K = Vertex('J', -1, y, -10), Vertex('K', -1, y, -10)
+            JK = Edge('JK', J, K)
+            print(JK, face.is_inside(J), face.is_inside(K))
+            if abs(y) < abs(A.y):
+                self.assertTrue(face.is_blocking(JK))
+            else:
+                self.assertFalse(face.is_blocking(JK))
+
+    def test_edge_occlusion_precision(self):
+        """move a small edge from one side of a face, behind the face, focusing on
+        the exact moment when it becomes hidden, and how precise that needs to be.
+        """
+        # make a face and an edge
+        face = Face('square', [AB, BC, CD, DA])
+        print(face)
+        for d in range(20):
+            x = 3.9 + d/100.
+            J, K = Vertex('J', x, 0.5, -10), Vertex('K', x, 0.5, -10)
+            JK = Edge('JK', J, K)
+            print(J, K, face.is_inside(J), face.is_inside(K))
+            if abs(x) - abs(A.x) > ACCURACY:
+                if abs(x) < abs(A.x):
+                    self.assertTrue(face.is_blocking(JK))
+                else:
+                    self.assertFalse(face.is_blocking(JK))
 
 
 class FaceOcclusionTestCase(unittest.TestCase):
