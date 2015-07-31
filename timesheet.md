@@ -1,9 +1,34 @@
 # Timesheet
 
-# Mon 27 (10-1, 2:30-
+4+5+7.5+8+8.5 = 33
+
+# Thu 30 (9-2, 3:30-
+
+* reduce the accuracy of the equivalence test for integrals, which fixes the
+   failure to correctly detect edge occlusion from about 2 whole units to the same unit.
+* keep testing the accuracy
+* Establish accuraacy at about +-0.04 (for 100 rectangles). Nige says fine, move along.
+* hidden faces and tests for hidden faces (accounting for inaccuracy and diagonal line tests)
+
+# Wed 29 (9-11,12-2,4:30-7:00, 9-11 = 8.5)
+
+* working through the integrals again/still - change the faces to be built by a path
+* lots of testing of the faces and the importing of the edges and rebuild the sort
+   so that it can even flip edges should the file of edges suddenly starts presenting
+   edges that are flipped around the wrong way
+* plan out some tests for the next step of detecting hidden edges and faces
+
+# Tues 28 (9-3,3:30:5:30 = 6+2 = 8)
+
+* still mucking around with integrals and paths!
+* rework the faces to respect the edges by keeping vertices in order of a path
+* implement "is_behind" routine
+
+# Mon 27 (10-1, 2:30-7pm = 3+4.5 = 7.5)
 
 * loads data into new little Vertex, Edge, Face classes and hooks it into nige's integral function then
-   tries to loop over every face/vertex/edge to decide if a vertex is visible   
+   tries to loop over every face/vertex/edge to decide if a vertex is visible
+* sort the edges to ensure the integrate is calculated via sequential vertices
 
 # Fri 24 Jul (10-?, 3-7 = call it 5 hrs).
 
