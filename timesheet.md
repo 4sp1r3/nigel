@@ -1,8 +1,20 @@
 # Timesheet
 
-4+5+7.5+8+8.5 = 33
+# Mon 03 (8:30-
 
-# Thu 30 (9-2, 3:30-
+* tada
+
+# Fri 31 (call it 5 hours)
+
+* decision to wind it down.  On and off through the day. 
+* A couple of long calls walking through code and working through priorities, todo list.
+* lightweight attempt to bodgey up some 'do', 'let', 'if' nodes fails
+* create a document that itemises all the DEAP GP routines
+
+# INVOICE 9 (40hrs)
+4+5+7.5+8+8.5+8 = 41
+
+# Thu 30 (9-2, 3:30-6.30 5+3=8)
 
 * reduce the accuracy of the equivalence test for integrals, which fixes the
    failure to correctly detect edge occlusion from about 2 whole units to the same unit.

@@ -257,6 +257,18 @@ class MatrixTestCase(unittest.TestCase):
         bset.add_primitive(square, [float], float, name="square")
         bset.add_primitive(sqrt, [float], float, name="sqrt")
 
+        def if_then_else(input, output1, output2):
+            if input:
+                return output1
+            else:
+                return output2
+
+        # bset.add_primitive(operator.lt, [float, float], bool, name="lt")
+        bset.add_primitive(operator.eq, [float, float], bool, name="gt")
+        bset.add_primitive(if_then_else, [bool, float, float], float, name="IF")
+
+        # bset.add_terminal(False, bool)
+        # bset.add_terminal(True, bool)
 
         # setup the individuals
         Individual.INTYPES = [np.ndarray]
@@ -288,10 +300,10 @@ class MatrixTestCase(unittest.TestCase):
         Population.MATE_MUTATE_CLONE = (70, 25, 5)  # ratio of individuals to mate, mutate, or clone
         Population.CLONE_BEST = 1  # Number of best individuals to seed directly into offspring
 
-        Individual.MAX_ADFS = 4  # The maximum number of ADFs to generate
+        Individual.MAX_ADFS = 0  # The maximum number of ADFs to generate
         Individual.ADF_NARGS = (1, 5)  # min, max number of input arguments to adfs
         Individual.GROWTH_TERM_PB = 0.3  # Probability of terminal when growing:
-        Individual.GROWTH_MAX_INIT_DEPTH = 10  # Maximum depth of initial growth
+        Individual.GROWTH_MAX_INIT_DEPTH = 12  # Maximum depth of initial growth
         Individual.GROWTH_MAX_MUT_DEPTH = 5  # Maximum depth of mutation growth
 
         population = Population(bset)

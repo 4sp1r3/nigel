@@ -146,12 +146,14 @@ class Individual(object):
             raise NoTerminalError("No terminal of type '%s' is available" % type_)
 
     @staticmethod
-    def get_random_primitive(pset, type_):
+    def gen_random_primitives(pset, type_):
         """Return one of the primitives of type from the pset"""
         primitives = pset.primitives[type_]
         if len(primitives):
-            primitive = random.choice(primitives)
-            return primitive
+            random.shuffle(primitives)
+            # yield primitives until you get one that works
+            for prim in primitives:
+                yield prim
         else:
             raise NoPrimitiveError("No primitive of type '%s' is available" % type_)
 
@@ -178,11 +180,17 @@ class Individual(object):
             return [Individual.get_random_terminal(pset, type_)]
 
         # return a primitive and tree
-        prim = Individual.get_random_primitive(pset, type_)
-        expr = [prim]
-        for arg in prim.args:
-            expr += Individual.grow(pset, max_ - 1, arg, prob)
-        return expr
+        for prim in Individual.gen_random_primitives(pset, type_):
+            try:
+                expr = [prim]
+                for arg in prim.args:
+                    expr += Individual.grow(pset, max_ - 1, arg, prob)
+                return expr
+            except (NoTerminalError, NoPrimitiveError):
+                # that prim didn't work, so try the next one.
+                continue
+        else:
+            raise NoPrimitiveError("No primitive is available. I tried them all.")
 
     def add_function(self, name, intypes=None, outtype=None, prefix='A'):
         """
@@ -208,23 +216,29 @@ class Individual(object):
         # (try to) grow a tree
         for signature in range(Individual.GROWTH_MAX_SIGNATURES):
             pset = self.get_primitive_set(name, intypes, outtype, prefix)
+            # keep trying till we get a valid function tree
             for attempt in range(self.GROWTH_MAX_ATTEMPTS):
                 try:
+                    # grow a tree
                     tree = PrimitiveTree(Individual.grow(pset, self.GROWTH_MAX_INIT_DEPTH, outtype, prob=self.GROWTH_TERM_PB))
                     all_args_used = all([pset.mapping[arg] in tree for arg in pset.arguments])
+                    # if all the arguments are used
                     if all_args_used and len(tree) > 1:
+                        # use it
                         self.psets.append(pset)
                         self.trees.append(tree)
                         return
                 except (NoTerminalError, NoPrimitiveError):
-                    # try again
+                    # a valid tree did not eventuate
                     continue
             else:
+                # if we couldn't grow a tree, but we are free to alter the inputs and output types
                 if flexible_signature:
                     # try a different signature
                     outtype = self.get_random_outtype()
                     intypes = self.get_random_intypes()
                 else:
+                    # otherwise abort
                     raise GrowException("Despite trying %s times unable to grow specified signature %s -> %s ." %
                                         (self.GROWTH_MAX_ATTEMPTS, intypes, outtype))
         else:
@@ -242,7 +256,7 @@ class Individual(object):
         """
         Change a random node by growing a new bit of tree there
         Yes, it could replace the root node of a subtree.
-        Yes, it will happily replace a slice with an identical slice. Especially nodes.
+        Yes, it will happily replace a slice with an identical slice. Especially terminals.
         """
         # pick a subtree to mutate
         idx = random.choice(range(len(self.trees)))
