@@ -312,3 +312,87 @@ class MatrixTestCase(unittest.TestCase):
 
         best = population[0]
         best.draw()
+
+    def test_pythagoras_matrix2(self):
+        """copy of the copy of the notebook"""
+
+        # setup the training data
+        SAMPLE_SIZE = 50
+        PLANE_SIZE = 20.0
+        RANDOMPOINTS = [PLANE_SIZE * np.random.random_sample((1, 2)) for _ in range(SAMPLE_SIZE)]
+
+        # setup the baseset
+        def getValue(ndarray, idx):
+            """Return the indexed value from the 1x2 numpy array"""
+            return ndarray[0][idx]
+
+        square = lambda x: x ** 2
+        sqrt = lambda x: math.sqrt(abs(x))
+
+        bset = Baseset()
+        bset.add_ephemeral('EM', lambda: np.random.rand(1, 2), np.ndarray)
+        bset.add_ephemeral('EF', lambda: random.random(), float)
+        bset.add_ephemeral('EI', lambda: random.randint(0, 1), int)
+
+        bset.add_primitive(getValue, [np.ndarray, int], float, name="get")
+        bset.add_primitive(operator.add, [float, float], float, name="add")
+        bset.add_primitive(operator.sub, [float, float], float, name="sub")
+        bset.add_primitive(square, [float], float, name="square")
+        bset.add_primitive(sqrt, [float], float, name="sqrt")
+
+        def if_then_else(input, output1, output2):
+            if input:
+                return output1
+            else:
+                return output2
+
+        bset.add_primitive(operator.lt, [float, float], bool, name="lt")
+        bset.add_primitive(if_then_else, [bool, float, float], float, name="IF")
+
+        # bset.add_terminal(False, bool)
+        # bset.add_terminal(True, bool)
+
+        # setup the individuals
+        Individual.INTYPES = [np.ndarray]
+        Individual.OUTTYPE = float
+
+        def evaluate(individual):
+            """sum of application of all the random points"""
+            program = individual.compile()
+            score = 0
+            try:
+                for point in RANDOMPOINTS:
+                    program_distance = program(point)
+                    true_distance = math.hypot(point[0][0], point[0][1])
+                    score += abs(true_distance - program_distance)
+            except (OverflowError, RuntimeWarning):
+                pass
+            if math.isnan(score) or score == 0:
+                score = 100000
+            # accumulate the number of nodes actually used during a run by calling the adfs in the rpb
+            nodes = sum([len(tree) for tree in individual.trees])
+            modifier = 1 + (-2 ** - (nodes / 250))
+            return score + modifier,
+
+        Individual.evaluate = evaluate
+
+
+        # run the evolution
+        Population.POPULATION_SIZE = 50  # Number of individuals in a generation
+        Population.MATE_MUTATE_CLONE = (70, 25, 5)  # ratio of individuals to mate, mutate, or clone
+        Population.CLONE_BEST = 1  # Number of best individuals to seed directly into offspring
+
+        Individual.MAX_ADFS = 0  # The maximum number of ADFs to generate
+        Individual.ADF_NARGS = (1, 5)  # min, max number of input arguments to adfs
+        Individual.GROWTH_TERM_PB = 0.3  # Probability of terminal when growing:
+        Individual.GROWTH_MAX_INIT_DEPTH = 12  # Maximum depth of initial growth
+        Individual.GROWTH_MAX_MUT_DEPTH = 5  # Maximum depth of mutation growth
+
+        population = Population(bset)
+        for gen in range(2):
+            population.evolve()
+            if population[0].fitness.values[0] < 1.0:
+                break
+
+        best = population[0]
+        best.draw()

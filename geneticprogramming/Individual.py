@@ -399,7 +399,15 @@ class Individual(object):
             if isinstance(node, Primitive):
                 labels[i] = node.name
             elif hasattr(node, 'value'):
-                labels[i] = node.value
+                if node.value in self.ephemerals_used:
+                    if isinstance(self.ephemerals_used[node.value], float):
+                        labels[i] = "%.2f" % self.ephemerals_used[node.value]
+                    elif isinstance(self.ephemerals_used[node.value], int):
+                        labels[i] = "%s" % self.ephemerals_used[node.value]
+                    else:
+                        labels[i] = node.value
+                else:
+                    labels[i] = node.value
             else:
                 labels[i] = str(node)
 
