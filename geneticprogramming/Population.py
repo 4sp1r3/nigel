@@ -93,7 +93,7 @@ class Population(list):
         for idx in range(len(self) - self.CLONE_BEST):
 
             # decide how to alter this individual
-            rand = random.random()
+            rand = random.randint(0,100)
 
             if rand < self.MATE_MUTATE_CLONE[0]:  # MATE/CROSSOVER
                 for _ in range(0, self.MAX_MATE_ATTEMPTS):
