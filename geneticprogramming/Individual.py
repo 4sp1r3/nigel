@@ -158,6 +158,11 @@ class Individual(object):
             raise NoPrimitiveError("No primitive of type '%s' is available" % type_)
 
     @staticmethod
+    def all_args_used(pset, tree):
+        """True if all the input arguments in pset are used by tree"""
+        return all([pset.mapping[arg] in tree for arg in pset.arguments])
+
+    @staticmethod
     def grow(pset, max_, type_=None, prob=None):
         """Generate an expression tree.
         Branches can be of any height, provided they are not more than *max*.
@@ -268,7 +273,15 @@ class Individual(object):
         type_ = subtree[index].ret
 
         # grow from that node
-        mutation = Individual.grow(subpset, self.GROWTH_MAX_MUT_DEPTH, type_=type_)
+        for _ in range(Individual.GROWTH_MAX_ATTEMPTS):
+            try:
+                mutation = Individual.grow(subpset, self.GROWTH_MAX_MUT_DEPTH, type_=type_, prob=self.GROWTH_TERM_PB)
+                if Individual.all_args_used(subpset, mutation):
+                    break
+                else:
+                    continue
+            except (GrowException, NoPrimitiveError, NoTerminalError):
+                continue
         # print(slice_, [n.name for n in subtree[slice_]], [n.name for n in mutation])
         subtree[slice_] = mutation
         del self.fitness.values

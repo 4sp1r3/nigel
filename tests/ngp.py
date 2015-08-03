@@ -378,20 +378,20 @@ class MatrixTestCase(unittest.TestCase):
 
 
         # run the evolution
-        Population.POPULATION_SIZE = 50  # Number of individuals in a generation
+        Population.POPULATION_SIZE = 500  # Number of individuals in a generation
         Population.MATE_MUTATE_CLONE = (70, 25, 5)  # ratio of individuals to mate, mutate, or clone
         Population.CLONE_BEST = 1  # Number of best individuals to seed directly into offspring
 
-        Individual.MAX_ADFS = 0  # The maximum number of ADFs to generate
-        Individual.ADF_NARGS = (1, 5)  # min, max number of input arguments to adfs
+        Individual.MAX_ADFS = 2  # The maximum number of ADFs to generate
+        Individual.ADF_NARGS = (1, 3)  # min, max number of input arguments to adfs
         Individual.GROWTH_TERM_PB = 0.3  # Probability of terminal when growing:
         Individual.GROWTH_MAX_INIT_DEPTH = 12  # Maximum depth of initial growth
         Individual.GROWTH_MAX_MUT_DEPTH = 5  # Maximum depth of mutation growth
 
         population = Population(bset)
-        for gen in range(2):
+        for gen in range(15):
             population.evolve()
-            if population[0].fitness.values[0] < 1.0:
+            if population[0].fitness.values[0] < 0.8:
                 break
 
         best = population[0]
