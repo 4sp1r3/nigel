@@ -8,6 +8,7 @@ It consists of many python notebooks in various states of tidy and untidiness.  
 probably will not.  This is because the code they draw from has evolved over time and we haven't gone back to
 update the older notebooks, prefering to preserve them as they were when they last ran cleanly.
 
+```
 ├── ADFFiveParity.ipynb       - the five parity problem using Automatically Defined Functions
 ├── AntSimulator.ipynb        - copied straight from deap and run locally
 ├── App.ipynb                 - a discardable workbook based on an attempt to consolidate code into 'app'
@@ -40,7 +41,7 @@ update the older notebooks, prefering to preserve them as they were when they la
 ├── if_then_else_for_but_stuff.ipynb  - workbook attempting loops
 ├── tests                     + unit tests for pieces of code scattered throughout. Many of the highlevel tests are copied into notebooks for nigels consumption
 └── timesheet.md              - a frank daily account of time consumption
-
+```
 
 # Setting up a Python environment (OS X)
 
