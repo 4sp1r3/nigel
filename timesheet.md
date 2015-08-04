@@ -1,8 +1,15 @@
 # Timesheet
 
-# Mon 03 (8:30-
+# Tues 04 (9-
 
-* tada
+* mockup do, let, progn
+* cut/paste evaluate scoring of node count
+* walk through some code
+* update the install/handover document
+
+# Mon 03 (8:30-2:00)
+
+* mutating and walking through stuff
 
 # Fri 31 (call it 5 hours)
 
