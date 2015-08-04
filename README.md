@@ -99,10 +99,10 @@ If pip has a much lower version number.  Upgrade it, and setuptools, with
 
 ## Numpy
 
-```$ pip install numpy
-```
+`pip install numpy`
 
-## virtualenv
+
+## Virtualenv
 
 https://virtualenv.pypa.io/en/latest/
 
