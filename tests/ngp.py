@@ -396,3 +396,89 @@ class MatrixTestCase(unittest.TestCase):
 
         best = population[0]
         best.draw()
+
+
+class FiveParityTestCase(unittest.TestCase):
+
+    def test_fiveparity(self):
+        """solve fiveparity using the geneticprogramming library"""
+
+        """
+        ### Training data: inputs and outputs
+        """
+        PARITY_FANIN_M = 5
+        PARITY_SIZE_M = 2 ** PARITY_FANIN_M
+
+        inputs = [None] * PARITY_SIZE_M
+        outputs = [None] * PARITY_SIZE_M
+
+        for i in range(PARITY_SIZE_M):
+            inputs[i] = [None] * PARITY_FANIN_M
+            value = i
+            dividor = PARITY_SIZE_M
+            parity = 1
+            for j in range(PARITY_FANIN_M):
+                dividor /= 2
+                if value >= dividor:
+                    inputs[i][j] = 1
+                    parity = int(not parity)
+                    value -= dividor
+                else:
+                    inputs[i][j] = 0
+            outputs[i] = parity
+
+
+        """
+        ### Primitive Sets for ADF and Main program
+        """
+        # you can build anything you need from this one primitive
+        def nor(a, b):
+            return (a | b) ^ 1
+
+        bset = Baseset()
+        bset.add_primitive(nor, [bool, bool], bool, name="nor")
+
+        # setup the individuals
+        Individual.INTYPES = [bool, bool, bool, bool, bool]
+        Individual.OUTTYPE = bool
+
+        def evaluate(individual):
+            """sum of invalid results plus modifier"""
+            program = individual.compile()
+            score = sum(program(*in_) == out for in_, out in zip(inputs, outputs))
+            score = max(0, PARITY_SIZE_M - score)
+
+            # accumulate the number of nodes actually used during a run by calling the adfs in the rpb
+            nodes = 0
+            for node in individual.trees[-1]:
+                if node.name[:1] != 'F':
+                    nodes += 1
+                else:
+                    nodes += len(individual.trees[int(node.name[1])])
+            modifier = 1 + (-2 ** - (nodes / 250))
+
+            return score + modifier,
+
+        Individual.evaluate = evaluate
+
+        # run the evolution
+        Population.POPULATION_SIZE = 50  # Number of individuals in a generation
+        Population.MATE_MUTATE_CLONE = (70, 25, 5)  # ratio of individuals to mate, mutate, or clone
+        Population.CLONE_BEST = 2  # Number of best individuals to seed directly into offspring
+
+        Individual.MAX_ADFS = 3  # The maximum number of ADFs to generate
+        Individual.ADF_NARGS = (1, 5)  # min, max number of input arguments to adfs
+        Individual.GROWTH_TERM_PB = 0.3  # Probability of terminal when growing:
+        Individual.GROWTH_MAX_INIT_DEPTH = 8  # Maximum depth of initial growth
+        Individual.GROWTH_MAX_MUT_DEPTH = 5  # Maximum depth of mutation growth
+
+        MAX_NUMBER_OF_GENERATIONS = 500
+
+        population = Population(bset)
+        for gen in range(MAX_NUMBER_OF_GENERATIONS):
+            population.evolve()
+            if population[0].fitness.values[0] < 0.5:
+                break
+
+        best = population[0]
+        best.draw()

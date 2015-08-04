@@ -51,9 +51,9 @@ class Individual(object):
     # Maximum depth of mutation growth
     GROWTH_MAX_MUT_DEPTH = 3
     # maximum number of times to attempt to grow a complete adf before abandoning
-    GROWTH_MAX_ATTEMPTS = 50
+    GROWTH_MAX_ATTEMPTS = 500
     # maximum number of signatures to try before ultimately giving up
-    GROWTH_MAX_SIGNATURES = 1000
+    GROWTH_MAX_SIGNATURES = 100
     # All ephemerals must start with this
     EPHEMERAL_PREFIX = 'E'
 
