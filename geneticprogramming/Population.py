@@ -2,7 +2,7 @@ import random
 import numpy as np
 
 from geneticprogramming import Individual
-from geneticprogramming import NoMateException
+from geneticprogramming import BirthError
 
 from deap.tools import Statistics
 from deap.tools import HallOfFame
@@ -95,26 +95,26 @@ class Population(list):
             # decide how to alter this individual
             rand = random.randint(0,100)
 
-            if rand < self.MATE_MUTATE_CLONE[0]:  # MATE/CROSSOVER
-                for _ in range(0, self.MAX_MATE_ATTEMPTS):
-                    try:
+            for _ in range(0, self.MAX_MATE_ATTEMPTS):
+                try:
+                    if rand < self.MATE_MUTATE_CLONE[0]:  # MATE/CROSSOVER
                         receiver, contributor = self.select(2)
                         child = receiver.clone()
                         child.mate(contributor)
                         break
-                    except NoMateException as ex:
-                        raise ex
-                else:  # fallback to a clone if we can't successfully mate
-                    child = self.select(1)
-                    print("No mate after %s attempts." % self.MAX_MATE_ATTEMPTS)
-
-            elif rand < (self.MATE_MUTATE_CLONE[0] + self.MATE_MUTATE_CLONE[1]):  # MUTATE
-                ind = self.select(1)
-                child = ind.clone()
-                child.mutate()
-
-            else:  # CLONE
-                child = self.select(1).clone()
+                    elif rand < (self.MATE_MUTATE_CLONE[0] + self.MATE_MUTATE_CLONE[1]):  # MUTATE
+                        ind = self.select(1)
+                        child = ind.clone()
+                        child.mutate()
+                        break
+                    else:
+                        child = self.select(1).clone()
+                        break
+                except BirthError:
+                    continue
+            # generate new blood when reproduction fails so badly
+            else:
+                child = Population.INDIVIDUAL_CLASS(self.bset)
 
             offspring.append(child)
         self[:] = offspring

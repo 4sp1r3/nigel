@@ -3,14 +3,14 @@ import unittest
 import math
 import uuid
 import numpy as np
+import types
+import random
+from functools import partial
+from deap.gp import Primitive, Terminal, PrimitiveSetTyped
 
 from geneticprogramming import Individual
 from geneticprogramming import Population
 from geneticprogramming import Baseset
-
-
-def nor(a, b):
-    return (a | b) ^ 1
 
 
 class NGPTestCase(unittest.TestCase):
@@ -65,11 +65,6 @@ class NGPTestCase(unittest.TestCase):
         for idx in range(5):
             tree, pset = baseset.addFunction('TST%s' % idx, [int, int], float, prefix='IN')
             print(tree, pset.mapping.keys())
-
-
-import types
-import random
-from functools import partial
 
 
 class ProgramTestCase(unittest.TestCase):
@@ -166,8 +161,6 @@ class ProgramTestCase(unittest.TestCase):
         print('-----\n\n')
 
 
-from deap.gp import Primitive, Terminal, PrimitiveSetTyped
-
 class CrossoverTestCase(unittest.TestCase):
     def test_iscompatible_adf(self):
         """
@@ -196,6 +189,30 @@ class CrossoverTestCase(unittest.TestCase):
         pset_int.addTerminal(0, int)
         terms = [term for type_ in pset_int.terminals for term in pset_int.terminals[type_]]
         self.assertTrue(all([Individual.is_compatible(term, pset_int) for term in terms]))
+
+
+class GrowTestCase(unittest.TestCase):
+    """growth can occur as a new tree or as an extension of an existing tree
+
+    There are subtle requirements for and within each."""
+    def setUp(self):
+        self.bset = Baseset()
+        self.bset.add_ephemeral(str(uuid.uuid4()), lambda: random.randint(1, 10), int)
+        self.bset.add_primitive(operator.add, [int, int], int)
+        Individual.INTYPES = [int]
+        Individual.OUTTYPE = int
+        Individual.MAX_ADFS = 0
+
+    def test_new_growth(self):
+        Individual.GROWTH_MAX_INIT_DEPTH = 3
+        ind = Individual(self.bset)
+        print(ind)
+
+    def test_mutation_growth(self):
+        ind = Individual(self.bset)
+        print(ind, '\n')
+        ind.mutate()
+        print(ind)
 
 
 class MatrixTestCase(unittest.TestCase):
@@ -398,14 +415,12 @@ class MatrixTestCase(unittest.TestCase):
         best.draw()
 
 
-class FiveParityTestCase(unittest.TestCase):
+class GeneticProgrammingTestCase(unittest.TestCase):
 
     def test_fiveparity(self):
         """solve fiveparity using the geneticprogramming library"""
 
-        """
         ### Training data: inputs and outputs
-        """
         PARITY_FANIN_M = 5
         PARITY_SIZE_M = 2 ** PARITY_FANIN_M
 
@@ -428,9 +443,7 @@ class FiveParityTestCase(unittest.TestCase):
             outputs[i] = parity
 
 
-        """
         ### Primitive Sets for ADF and Main program
-        """
         # you can build anything you need from this one primitive
         def nor(a, b):
             return (a | b) ^ 1
@@ -444,9 +457,6 @@ class FiveParityTestCase(unittest.TestCase):
 
         def evaluate(individual):
             """sum of invalid results plus modifier"""
-            program = individual.compile()
-            score = sum(program(*in_) == out for in_, out in zip(inputs, outputs))
-            score = max(0, PARITY_SIZE_M - score)
 
             # accumulate the number of nodes actually used during a run by calling the adfs in the rpb
             nodes = 0
@@ -457,28 +467,88 @@ class FiveParityTestCase(unittest.TestCase):
                     nodes += len(individual.trees[int(node.name[1])])
             modifier = 1 + (-2 ** - (nodes / 250))
 
+            program = individual.compile()
+            score = sum(program(*in_) == out for in_, out in zip(inputs, outputs))
+            score = max(0, PARITY_SIZE_M - score)
+
             return score + modifier,
 
         Individual.evaluate = evaluate
 
         # run the evolution
-        Population.POPULATION_SIZE = 50  # Number of individuals in a generation
-        Population.MATE_MUTATE_CLONE = (70, 25, 5)  # ratio of individuals to mate, mutate, or clone
-        Population.CLONE_BEST = 2  # Number of best individuals to seed directly into offspring
+        Population.MATE_MUTATE_CLONE = (70, 27, 3)  # ratio of individuals to mate, mutate, or clone
+        Population.CLONE_BEST = 10  # Number of best individuals to seed directly into offspring
 
-        Individual.MAX_ADFS = 3  # The maximum number of ADFs to generate
+        Individual.MAX_ADFS = 2  # The maximum number of ADFs to generate
         Individual.ADF_NARGS = (1, 5)  # min, max number of input arguments to adfs
         Individual.GROWTH_TERM_PB = 0.3  # Probability of terminal when growing:
-        Individual.GROWTH_MAX_INIT_DEPTH = 8  # Maximum depth of initial growth
-        Individual.GROWTH_MAX_MUT_DEPTH = 5  # Maximum depth of mutation growth
+        Individual.GROWTH_MAX_INIT_DEPTH = 5  # Maximum depth of initial growth
+        Individual.GROWTH_MAX_MUT_DEPTH = 3  # Maximum depth of mutation growth
+        Population.POPULATION_SIZE = 500  # Number of individuals in a generation
 
         MAX_NUMBER_OF_GENERATIONS = 500
-
         population = Population(bset)
         for gen in range(MAX_NUMBER_OF_GENERATIONS):
             population.evolve()
-            if population[0].fitness.values[0] < 0.5:
+            if round(population[0].fitness.values[0], 2) < 0.3:
                 break
+
+        best = population[0]
+        best.draw()
+
+    def test_pythagoras(self):
+
+        # setup the training data
+        SAMPLE_SIZE = 50
+        PLANE_SIZE = 20.0
+        RANDOMPOINTS = [(PLANE_SIZE * random.random(), PLANE_SIZE * random.random()) for _ in range(SAMPLE_SIZE)]
+
+        square = lambda x: x ** 2
+        sqrt = lambda x: math.sqrt(abs(x))
+
+        bset = Baseset()
+        bset.add_primitive(operator.add, [float, float], float, name="add")
+        bset.add_primitive(operator.sub, [float, float], float, name="sub")
+        bset.add_primitive(square, [float], float, name="square")
+        bset.add_primitive(sqrt, [float], float, name="sqrt")
+
+        # setup the individuals
+        Individual.INTYPES = [float, float]
+        Individual.OUTTYPE = float
+
+        def evaluate(individual):
+            """sum of application of all the random points"""
+            program = individual.compile()
+            score = 0
+            try:
+                for x, y in RANDOMPOINTS:
+                    program_distance = program(x, y)
+                    true_distance = math.hypot(x, y)
+                    score += abs(true_distance - program_distance)
+            except (OverflowError, RuntimeWarning):
+                pass
+            if math.isnan(score) or score == 0:
+                score = 100000
+            # accumulate the number of nodes actually used during a run by calling the adfs in the rpb
+            nodes = len(individual.trees[0])
+            return score + nodes,
+
+        Individual.evaluate = evaluate
+
+        # run the evolution
+        Population.POPULATION_SIZE = 500   # Number of individuals in a generation
+        Population.MATE_MUTATE_CLONE = (70, 25, 5)  # ratio of individuals to mate, mutate, or clone
+        Population.CLONE_BEST = 1  # Number of best individuals to seed directly into offspring
+
+        Individual.MAX_ADFS = 0  # The maximum number of ADFs to generate
+        Individual.ADF_NARGS = (1, 5)  # min, max number of input arguments to adfs
+        Individual.GROWTH_TERM_PB = 0.3  # Probability of terminal when growing:
+        Individual.GROWTH_MAX_INIT_DEPTH = 12  # Maximum depth of initial growth
+        Individual.GROWTH_MAX_MUT_DEPTH = 5  # Maximum depth of mutation growth
+
+        population = Population(bset)
+        while round(population[0].fitness.values[0], 1) > 6.0:
+            population.evolve()
 
         best = population[0]
         best.draw()

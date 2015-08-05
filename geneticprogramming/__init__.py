@@ -1,8 +1,8 @@
 __author__ = 'johnmee'
 
 
-class NoMateException(Exception):
-    """Unsuccessful in finding a compatible mate for an individual"""
+class BirthError(Exception):
+    """Unsuccessful in finding a compatible mate for, or mutating, an individual"""
     pass
 
 
