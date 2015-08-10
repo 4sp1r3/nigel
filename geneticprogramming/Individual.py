@@ -302,10 +302,13 @@ class Individual(object):
         branch_nodes = [(b, n) for b in range(len(self.trees)) for n in range(len(self.trees[b]))]
         random.shuffle(branch_nodes)
 
+        # for every candidate to receive a contribution
         for ibranch, inode in branch_nodes:
+            # find a contribution of the same type
             nodetype = self.trees[ibranch][inode].ret
             contribution = other.find_slice(nodetype, self.psets[ibranch])
             if contribution is not None:
+                # paste in the contribution
                 pruned_slice = self.trees[ibranch].searchSubtree(inode)
                 self.trees[ibranch][pruned_slice] = contribution
                 del self.fitness.values

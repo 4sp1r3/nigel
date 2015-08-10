@@ -1,13 +1,49 @@
 # Timesheet
 
-# Tues 04 (9-
+# Fri-Mon 10 August 2015. (6hrs)
+
+* crystallized a number of definitions and requirements into hard specifications on the wiki in a last vain hope of getting nige 
+   to appreciate what proper workable (SRS-style) requirements might actually look like
+* a few more emails to-and-fro trying to extract requirements that were focused on objective improvements rather than subjective appearances
+* thereafter descended into typical he-said-she-said breakup-by-email war
+* ultimately ending up on the rocky shores of: "i'm paying for this so disengage your brain and do whatever i say, as i say, because i say"
+* rejected with: "get stuffed, i ain't no man's lacky"
+* so your typical break-up spat; not too personal as spats go but sufficient bridge-burning to attain the standard conclusion: We're done here.
+
+* NB: I failed to appreciate/accept/be informed of the goal shift from "lets build something awesome together" to "I need to present 
+   a glowing report (and I'm comfortable with reality augmentation in pursuit of that goal)"
+
+* better endings? One wonders where we'd be now if I'd made a better case (ultimatum?) to ditch DEAP and pursue our own AST-based solution
+    pros? we would've been able to surpass DEAP's evaluation system and implement programs the way he'd originally thought it worked, and
+       thus go above and beyound
+    cons? could've descended into a quagmire of unforeseen decisions/dilemnas-completely blowing out time/money restraints which would all 
+       clearly end up in a vastly deeper 'all johns fault' bin
+
+* best/safest ending? Certainly winding it up once nige was dragged into the light that DEAP wan't going to get him where he'd hoped
+    (but he kept swerving back toward continuing, so a hard line wouldn't have ended with friction either (although at least the bulk of
+    spite would've been directed mostly at the DEAP guys instead ;-)
+
+# Wed 05 (9-10, 3-4, 8-9:30)
+
+* talking through code
+* commit notebooks and whatnot, push up new growing style
+* talking through mate, not checking for all args usage
+* talking through crazy schemes to 'not throw away all that work' 
+    when grow can't close down before the required depth
+* requirements analysis
+
+
+# Tues 04 (9-2) (5-11) 7hrs+6hrs 13.0
 
 * mockup do, let, progn
 * cut/paste evaluate scoring of node count
 * walk through some code
 * update the install/handover document
+* spent a whole bunch of my own time rebuilding the grow routine so that it doesn't saturate the
+   lower part of the tree when it gets hard
+* move the five parity problem over to the genetic programming library
 
-# Mon 03 (8:30-2:00)
+# Mon 03 (8:30-2:00) 5.5
 
 * mutating and walking through stuff
 
